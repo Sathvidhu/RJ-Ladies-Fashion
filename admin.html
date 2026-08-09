@@ -12,6 +12,7 @@
     
     <!-- FontAwesome icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="style.css">
     <style>
         /* Dedicated Admin Overlay Styles */
@@ -343,17 +344,26 @@
                                             </select>
                                         </div>
 
-                                        <div class="form-group color-picker-group">
-                                            <label>Color Picker</label>
-                                            <input type="color" class="form-control variant-color" value="#0f766e">
+                                        <div class="form-group variant-product-image-group">
+                                            <label>Product Image</label>
+                                            <div class="variant-upload-wrapper">
+                                                <img class="variant-image-preview" alt="Product image preview" hidden>
+                                                <label class="variant-upload-btn">
+                                                    <i class="fa-solid fa-image"></i>
+                                                    <span class="variant-image-button-text">Choose Photo</span>
+                                                    <input type="file" class="variant-upload-input variant-image" accept="image/*">
+                                                </label>
+                                                <span class="variant-file-name variant-image-file-name">No photo selected</span>
+                                            </div>
                                         </div>
 
                                         <div class="form-group swatch-image-group" style="display:none;">
                                             <label>Swatch Image</label>
                                             <div class="variant-upload-wrapper">
+                                                <img class="variant-swatch-preview" alt="Swatch preview" hidden>
                                                 <label class="variant-upload-btn">
                                                     <i class="fa-solid fa-image"></i>
-                                                    Choose Swatch
+                                                    <span class="variant-swatch-button-text">Choose Swatch</span>
                                                     <input type="file"
                                                         class="variant-upload-input variant-swatch-image"
                                                         accept="image/*">
@@ -362,22 +372,6 @@
                                             </div>
                                         </div>
 
-                                        <div class="form-group" style="grid-column: 1 / -1;">
-                                            <div class="variant-upload-wrapper">
-                                                <label class="variant-upload-btn">
-                                                    <i class="fa-solid fa-images"></i>
-                                                    Choose Photos
-                                                    <input type="file" class="variant-upload-input variant-images" accept="image/*" multiple>
-                                                </label>
-
-                                                <span class="variant-file-name">No photos selected</span>
-
-                                                <div class="variant-preview-grid"></div>
-                                            </div>
-
-                                            <small style="color:#6b635b;">Hold Ctrl to select multiple images at once.</small>
-                                        </div>
-                                        
                                     </div>
 
                                     <button type="button" class="btn-sm btn-delete remove-variant-btn" style="margin-top:10px;">

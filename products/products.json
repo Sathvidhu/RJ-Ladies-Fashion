@@ -4,20 +4,20 @@
     "name": "Cream Floral Top",
     "price": "799",
     "category": "tops",
-    "size": ["S","M","L"],
+    "size": [
+      "S",
+      "M",
+      "L"
+    ],
     "variants": [
       {
-        "id": "v1",
         "label": "Navy Blue",
         "swatchType": "image",
-        "swatchValue": "https://res.cloudinary.com/fv05tjzl/image/upload/v1786156993/pukan9sv0k9igy7pgfvz.jpg",
-        "images": [
-          "https://res.cloudinary.com/fv05tjzl/image/upload/v1786156993/pukan9sv0k9igy7pgfvz.jpg",
-          "https://res.cloudinary.com/fv05tjzl/image/upload/v1786156993/pukan9sv0k9igy7pgfvz.jpg",
-          "https://res.cloudinary.com/fv05tjzl/image/upload/v1786156993/pukan9sv0k9igy7pgfvz.jpg"
-        ]
+        "swatchValue": "https://res.cloudinary.com/fv05tjzl/image/upload/v1786289368/ctadagvrbmdo8ny6rox4.jpg",
+        "image": "https://res.cloudinary.com/fv05tjzl/image/upload/v1786156993/pukan9sv0k9igy7pgfvz.jpg"
       }
-    ]
+    ],
+    "image": "https://res.cloudinary.com/fv05tjzl/image/upload/v1786156993/pukan9sv0k9igy7pgfvz.jpg"
   },
   {
     "id": 1002,
@@ -182,14 +182,55 @@
   },
   {
     "id": 1016,
-    "name": "kurthi",
-    "price": "1266",
-    "category": "kurtis",
+    "name": "top",
+    "price": "699",
+    "category": "tops",
+    "size": [
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "image": "https://res.cloudinary.com/fv05tjzl/image/upload/v1786291221/elc8lzqmhnetfaqsme9c.jpg",
+    "variants": [
+      {
+        "label": "Pastel",
+        "swatchType": "image",
+        "swatchValue": "https://res.cloudinary.com/fv05tjzl/image/upload/v1786291222/pl8tqrz40akxncdpwtby.jpg",
+        "image": "https://res.cloudinary.com/fv05tjzl/image/upload/v1786291221/elc8lzqmhnetfaqsme9c.jpg"
+      }
+    ]
+  },
+  {
+    "id": 1017,
+    "name": "top",
+    "price": "1455",
+    "category": "tops",
     "size": [
       "S",
       "M",
       "L"
     ],
-    "image": ""
+    "image": "https://res.cloudinary.com/fv05tjzl/image/upload/v1786295665/qwvj56hersl5pzowfqfo.jpg",
+    "variants": [
+      {
+        "label": "Blue",
+        "swatchType": "color",
+        "swatchValue": "#0f766e",
+        "image": "https://res.cloudinary.com/fv05tjzl/image/upload/v1786295665/qwvj56hersl5pzowfqfo.jpg"
+      },
+      {
+        "label": "brown",
+        "swatchType": "color",
+        "swatchValue": "#0f766e",
+        "image": "https://res.cloudinary.com/fv05tjzl/image/upload/v1786295666/xzopkylhcuba3t84zm53.jpg"
+      },
+      {
+        "label": "yellow",
+        "swatchType": "color",
+        "swatchValue": "#0f766e",
+        "image": "https://res.cloudinary.com/fv05tjzl/image/upload/v1786295667/bmk6g3vdsz7pls39ikpy.jpg"
+      }
+    ]
   }
 ]

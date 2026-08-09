@@ -420,10 +420,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // PRODUCT IMAGE HELPER (supports variants)
     // ==========================================
     function getPrimaryImage(product) {
-        if (product.variants && product.variants.length > 0) {
-            return product.variants[0].images[0];
-        }
-        return product.image;
+        const firstVariant = product.variants && product.variants[0];
+        return (firstVariant && (firstVariant.image || (firstVariant.images && firstVariant.images[0]))) || product.image;
     }
     // ==========================================
     // 3. RENDER PRODUCTS

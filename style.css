@@ -857,8 +857,9 @@ header {
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    background: linear-gradient(135deg, #8b3a3a, #b65b4f);
-    color: #fff;
+    background: #8c3d3d;
+    border: 1px solid #8c3d3d;
+    color: #ffffff;
     padding: 12px 20px;
     border-radius: 12px;
     font-weight: 600;
@@ -867,9 +868,61 @@ header {
     box-shadow: 0 8px 20px rgba(139,58,58,.18);
 }
 
+.variant-upload-btn,
+.variant-upload-btn i,
+.variant-upload-btn span {
+    color: #ffffff;
+}
+
 .variant-upload-btn:hover {
+    background: #b45f4d;
+    border-color: #b45f4d;
     transform: translateY(-2px);
     box-shadow: 0 12px 24px rgba(139,58,58,.28);
+}
+
+.variant-upload-btn:focus-within {
+    outline: 3px solid rgba(180, 95, 77, 0.35);
+    outline-offset: 3px;
+}
+
+#add-variant-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 8px;
+    background: #8c3d3d;
+    border: 1px solid #8c3d3d;
+    border-radius: 12px;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 8px 20px rgba(139, 58, 58, 0.18);
+    transition: all 0.25s ease;
+}
+
+#add-variant-btn,
+#add-variant-btn i {
+    color: #ffffff;
+}
+
+#add-variant-btn:hover {
+    background: #b45f4d;
+    border-color: #b45f4d;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(139, 58, 58, 0.28);
+}
+
+#add-variant-btn:focus-visible {
+    outline: 3px solid rgba(180, 95, 77, 0.35);
+    outline-offset: 3px;
+}
+
+.variant-upload-btn:active,
+#add-variant-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 5px 12px rgba(139, 58, 58, 0.2);
 }
 
 .variant-file-name {
@@ -879,20 +932,32 @@ header {
     display: block;
 }
 
-.variant-preview-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 12px;
-}
-
-.variant-preview-grid img {
+.variant-image-preview,
+.variant-swatch-preview {
     width: 74px;
     height: 92px;
     object-fit: cover;
     border-radius: 10px;
     border: 1px solid #ead7c0;
     background: #fff;
+    display: block;
+    margin: 0 0 12px;
+}
+
+.variant-image-preview[hidden],
+.variant-swatch-preview[hidden] {
+    display: none;
+}
+
+.variant-product-image-group .variant-image-preview {
+    width: 100%;
+    max-width: 180px;
+    height: 150px;
+}
+
+.variant-swatch-preview {
+    width: 52px;
+    height: 52px;
 }
 
 /* ==========================================
@@ -1162,27 +1227,28 @@ footer {
 .admin-colors-wrap {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
-.admin-color-swatch,
-.admin-color-swatch-image {
-    width: 24px;
-    height: 24px;
+.variant-thumb {
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 1px #d8c2a8;
-    cursor: pointer;
-    transition: transform .2s ease;
+    overflow: hidden;
+    display: inline-flex;
+    flex: 0 0 32px;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(45, 41, 38, 0.2);
+    background: #e4ddd6;
 }
 
-.admin-color-swatch:hover,
-.admin-color-swatch-image:hover {
-    transform: scale(1.12);
-}
-
-.admin-color-swatch-image {
+.variant-thumb img {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    background: #fff;
+}
+
+.variant-thumb-placeholder {
+    background: #d8c8bb;
 }
