@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="RJ Ladies Fashion - Premium ethnic wear, sarees, kurtis, tops and accessories with modern retro elegance.">
+    <title>RJ Ladies Fashion | Timeless Boutique Collection</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..800;1,400..800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="script.js"></script>
+</head>
+<body>
+
+    <!-- Top Announcement & Offers Ticker Bar -->
+    <div class="top-announcement-bar" id="announcement-bar">
+        <div class="container announcement-content">
+            <span id="announcement-text">
+                <i class="fa-solid fa-bullhorn"></i> Special Offer: Use coupon code <strong class="coupon-tag">RJ799</strong> for 10% OFF on orders above ₹799+
+            </span>
+            <!--<button id="track-order-header-btn" class="track-link-btn">
+                <i class="fa-solid fa-truck-ramp-box"></i> Track Order Status
+            </button>-->
+        </div>
+    </div>
+
+    <!-- Header / Navbar -->
+    <header>
+        <nav class="navbar">
+            <div class="logo">
+                <a href="#">RJ <span>Fashion</span></a>
+            </div>
+            
+            <button class="mobile-toggle" id="mobile-toggle" aria-label="Toggle menu">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+            <ul class="nav-links" id="nav-links">
+                <li><a href="#hero" class="active">Home</a></li>
+                <li><a href="#collection">Collection</a></li>
+                <li><a href="#products-section">Products</a></li>
+                <li><a href="#about">About</a></li>
+                
+                <!-- Auth & Admin Navigation Slot -->
+                <li id="auth-nav-slot">
+                    <button id="open-auth-btn" class="nav-auth-btn">
+                        <i class="fa-solid fa-user"></i> Login / Register
+                    </button>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <span class="hero-subtitle"><i class="fa-solid fa-gem"></i> TIMELESS COLLECTION</span>
+            <h1>Vintage Elegance<br>for Modern Women</h1>
+            <p>Discover hand-crafted sarees, kurtis, tops and accessories designed for supreme grace and comfort.</p>
+            <div class="buttons">
+                <a href="#products-section" class="btn primary">Explore Collection</a>
+                <button id="hero-auth-btn" class="btn secondary">Login Account</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Collection Banner Section -->
+    <section class="collection-promo" id="collection">
+        <div class="container promo-grid">
+            <div class="promo-image">
+                <img src="images/banners/collection-banner.jpg" alt="Collection Banner" loading="lazy">
+            </div>
+            <div class="promo-text">
+                <span class="badge">SEASON HIGHLIGHT</span>
+                <h2 id="promo-headline">Curated Artisanal Crafts</h2>
+                <p id="promo-subtext">Immerse yourself in luxurious textures, vibrant terracotta hues, and intricate embroidery. Every piece tells a story of modern retro style.</p>
+                <a href="#products-section" class="btn primary-sm">Shop The Look</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Catalog Section -->
+    <section class="products-section" id="products-section">
+        <div class="container">
+            <div class="section-title">
+                <h2>Boutique Catalogue</h2>
+                <div class="title-divider"></div>
+                <p>Select size, apply coupon code & order directly on WhatsApp</p>
+            </div>
+
+            <!-- Global Coupon Code Applied Bar -->
+            <div class="global-coupon-box">
+                <div class="coupon-input-wrapper">
+                    <i class="fa-solid fa-ticket icon"></i>
+                    <input type="text" id="global-coupon-input" placeholder="Enter Coupon Code (e.g. RJ799)" style="text-transform: uppercase;">
+                    <button id="apply-coupon-btn" class="btn primary-sm">Apply Coupon</button>
+                    <button id="remove-coupon-btn" class="btn secondary-sm" style="display: none;">Remove</button>
+                </div>
+                <div id="coupon-message" class="coupon-msg"></div>
+            </div>
+
+            <!-- Category Filter Buttons -->
+            <div class="filter-container">
+                <button class="filter-btn active" data-category="all">
+                    <i class="fa-solid fa-border-all"></i> All Products
+                </button>
+                <button class="filter-btn" data-category="tops">
+                    <i class="fa-solid fa-shirt"></i> Tops
+                </button>
+                <button class="filter-btn" data-category="kurtis">
+                    <i class="fa-solid fa-vest"></i> Kurtis
+                </button>
+                <button class="filter-btn" data-category="sarees">
+                    <i class="fa-solid fa-vest-patches"></i> Sarees
+                </button>
+                <button class="filter-btn" data-category="accessories">
+                    <i class="fa-solid fa-bag-shopping"></i> Accessories
+                </button>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="loader" class="loader-container">
+                <div class="spinner"></div>
+                <p>Fetching curated collection...</p>
+            </div>
+
+            <!-- Products Grid Container -->
+            <div class="products-grid" id="products-grid">
+                <!-- Products dynamically loaded here via script.js -->
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about-section" id="about">
+        <div class="container about-content">
+            <div class="about-card">
+                <i class="fa-solid fa-award icon"></i>
+                <h3>Premium Quality</h3>
+                <p>Hand-selected fabrics ensuring utmost luxury, durability, and skin-friendly comfort.</p>
+            </div>
+            <div class="about-card">
+                <i class="fa-solid fa-truck-fast icon"></i>
+                <h3>Direct WhatsApp Order</h3>
+                <p>Seamless one-click ordering experience directly connected with our boutique team.</p>
+            </div>
+            <div class="about-card">
+                <i class="fa-solid fa-scissors icon"></i>
+                <h3>Tailored Perfection</h3>
+                <p>Flattering cuts and versatile sizes crafted specifically for modern Indian fashion.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Order Tracker Modal -->
+    <div id="tracker-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <button id="close-modal-btn" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-truck-ramp-box"></i> Track WhatsApp Order</h3>
+                <p>Enter your Order ID (e.g. RJ-8091) to check live status</p>
+            </div>
+            <div class="modal-body">
+                <div class="search-box">
+                    <input type="text" id="track-id-input" placeholder="e.g. RJ-8091" class="form-control">
+                    <button id="search-order-btn" class="btn primary-sm">Check Status</button>
+                </div>
+                <div id="track-result-box" class="track-result" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unified Auth Modal (Client & Admin Login / Register) -->
+    <div id="auth-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-card auth-modal-card">
+            <button id="close-auth-modal-btn" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+            
+            <div class="auth-tabs">
+                <button id="tab-login" class="auth-tab-btn active">Sign In</button>
+                <button id="tab-register" class="auth-tab-btn">Register</button>
+            </div>
+
+            <!-- Login Form (Customer or Admin) -->
+            <form id="login-form" class="auth-form">
+                <div class="modal-header" style="text-align: center; margin-bottom: 20px;">
+                    <h3>Welcome Back</h3>
+                    <p>Log in as Customer or Admin</p>
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="login-email">Email or Username *</label>
+                    <input type="text" id="login-email" class="form-control" placeholder="admin@rjfashion.com or your email" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="login-password">Password *</label>
+                    <input type="password" id="login-password" class="form-control" placeholder="Enter password (admin123)" required>
+                </div>
+                <div class="admin-hint-box">
+                    <i class="fa-solid fa-shield-halved"></i> Admin credentials: <code>admin@rjfashion.com</code> / <code>admin123</code>
+                </div>
+                <div id="auth-error-msg" class="auth-error" style="display: none;"></div>
+                <button type="submit" class="btn primary" style="width: 100%; margin-top: 15px;">
+                    <i class="fa-solid fa-right-to-bracket"></i> Sign In
+                </button>
+            </form>
+
+            <!-- Register Form (Customer) -->
+            <form id="register-form" class="auth-form" style="display: none;">
+                <div class="modal-header" style="text-align: center; margin-bottom: 20px;">
+                    <h3>Create Account</h3>
+                    <p>Join RJ Ladies Fashion for special boutique offers</p>
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="reg-name">Full Name *</label>
+                    <input type="text" id="reg-name" class="form-control" placeholder="e.g. Priya Sharma" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="reg-email">Email Address *</label>
+                    <input type="email" id="reg-email" class="form-control" placeholder="name@example.com" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="reg-password">Create Password *</label>
+                    <input type="password" id="reg-password" class="form-control" placeholder="Minimum 6 characters" required minlength="6">
+                </div>
+                <button type="submit" class="btn primary" style="width: 100%;">
+                    <i class="fa-solid fa-user-plus"></i> Create Account
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer id="contact">
+        <div class="container footer-content">
+            <div class="footer-brand">
+                <h3>RJ <span>Fashion</span></h3>
+                <p>Fashion that never goes out of style. Embellishing modern women with timeless grace.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="#hero">Home</a></li>
+                    <li><a href="#collection">Collection</a></li>
+                    <li><a href="#products-section">Shop</a></li>
+                </ul>
+            </div>
+            <div class="footer-contact">
+                <h4>Contact Us</h4>
+                <p><i class="fa-brands fa-whatsapp"></i> WhatsApp Order Desk</p>
+                <p><i class="fa-solid fa-location-dot"></i> RJ Ladies Fashion Boutique</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 RJ Ladies Fashion. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Firebase SDK (v10 compat CDN) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

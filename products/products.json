@@ -1,0 +1,195 @@
+[
+  {
+    "id": 1001,
+    "name": "Cream Floral Top",
+    "price": "799",
+    "category": "tops",
+    "size": ["S","M","L"],
+    "variants": [
+      {
+        "id": "v1",
+        "label": "Navy Blue",
+        "swatchType": "image",
+        "swatchValue": "https://res.cloudinary.com/fv05tjzl/image/upload/v1786156993/pukan9sv0k9igy7pgfvz.jpg",
+        "images": [
+          "https://res.cloudinary.com/fv05tjzl/image/upload/v1786156993/pukan9sv0k9igy7pgfvz.jpg",
+          "https://res.cloudinary.com/fv05tjzl/image/upload/v1786156993/pukan9sv0k9igy7pgfvz.jpg",
+          "https://res.cloudinary.com/fv05tjzl/image/upload/v1786156993/pukan9sv0k9igy7pgfvz.jpg"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 1002,
+    "name": "Terracotta Top",
+    "price": 899,
+    "category": "tops",
+    "size": [
+      "S",
+      "M",
+      "L"
+    ],
+    "image": "images/tops/top-02.jpg"
+  },
+  {
+    "id": 1003,
+    "name": "Embroidered Top",
+    "price": 999,
+    "category": "tops",
+    "size": [
+      "S",
+      "M",
+      "L"
+    ],
+    "image": "images/tops/top-03.jpg"
+  },
+  {
+    "id": 1004,
+    "name": "Minimal Linen Top",
+    "price": 749,
+    "category": "tops",
+    "size": [
+      "S",
+      "M",
+      "L"
+    ],
+    "image": "images/tops/top-04.jpg"
+  },
+  {
+    "id": 1005,
+    "name": "Floral Kurti",
+    "price": 1299,
+    "category": "kurtis",
+    "size": [
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "image": "images/kurtis/kurti-01.jpg"
+  },
+  {
+    "id": 1006,
+    "name": "Cotton Kurti",
+    "price": 1499,
+    "category": "kurtis",
+    "size": [
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "image": "images/kurtis/kurti-02.jpg"
+  },
+  {
+    "id": 1007,
+    "name": "Traditional Terracotta Kurti",
+    "price": 1399,
+    "category": "kurtis",
+    "size": [
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "image": "images/kurtis/kurti-03.jpg"
+  },
+  {
+    "id": 1008,
+    "name": "Modern Minimalist Kurti",
+    "price": 1199,
+    "category": "kurtis",
+    "size": [
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "image": "images/kurtis/kurti-04.jpg"
+  },
+  {
+    "id": 1009,
+    "name": "Premium Silk Saree",
+    "price": 2499,
+    "category": "sarees",
+    "size": [
+      "Free Size"
+    ],
+    "image": "images/sarees/saree-01.jpg"
+  },
+  {
+    "id": 1010,
+    "name": "Printed Saree",
+    "price": 1899,
+    "category": "sarees",
+    "size": [
+      "Free Size"
+    ],
+    "image": "images/sarees/saree-02.jpg"
+  },
+  {
+    "id": 1011,
+    "name": "Elegant Cotton Saree",
+    "price": 1699,
+    "category": "sarees",
+    "size": [
+      "Free Size"
+    ],
+    "image": "images/sarees/saree-03.jpg"
+  },
+  {
+    "id": 1012,
+    "name": "Premium Party-Wear Saree",
+    "price": 2999,
+    "category": "sarees",
+    "size": [
+      "Free Size"
+    ],
+    "image": "images/sarees/saree-04.jpg"
+  },
+  {
+    "id": 1013,
+    "name": "Premium Handbag",
+    "price": 1599,
+    "category": "accessories",
+    "size": [
+      "Standard"
+    ],
+    "image": "images/accessories/accessory-01.jpg"
+  },
+  {
+    "id": 1014,
+    "name": "Elegant Jewellery Collection",
+    "price": 1999,
+    "category": "accessories",
+    "size": [
+      "Standard"
+    ],
+    "image": "images/accessories/accessory-02.jpg"
+  },
+  {
+    "id": 1015,
+    "name": "kurthi",
+    "price": "1199",
+    "category": "kurtis",
+    "description": "",
+    "image": "https://res.cloudinary.com/fv05tjzl/image/upload/v1786155985/kpanlmbrzky0rctt8yxs.jpg",
+    "size": [
+      "S",
+      "M",
+      "L"
+    ]
+  },
+  {
+    "id": 1016,
+    "name": "kurthi",
+    "price": "1266",
+    "category": "kurtis",
+    "size": [
+      "S",
+      "M",
+      "L"
+    ],
+    "image": ""
+  }
+]

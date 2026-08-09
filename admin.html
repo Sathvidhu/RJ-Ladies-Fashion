@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | RJ Ladies Fashion</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400..700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Dedicated Admin Overlay Styles */
+        body {
+            background-color: #f7efe5;
+        }
+
+        .admin-header {
+            background: #2d2926;
+            color: #f7efe5;
+            padding: 16px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .admin-logo {
+            font-family: "Playfair Display", serif;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .admin-logo span {
+            color: #b45f4d;
+        }
+
+        .admin-nav-tabs {
+            display: flex;
+            gap: 15px;
+            margin: 30px auto;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: #ffffff;
+            border: 1px solid #d8c8bb;
+            color: #2d2926;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover, .tab-btn.active {
+            background: #8c3d3d;
+            color: #ffffff;
+            border-color: #8c3d3d;
+            box-shadow: 0 6px 16px rgba(140, 61, 61, 0.25);
+        }
+
+        .admin-section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .admin-section.active {
+            display: block;
+        }
+
+        .admin-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(45, 41, 38, 0.08);
+            margin-bottom: 30px;
+            border: 1px solid rgba(216, 200, 187, 0.6);
+        }
+
+        .admin-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ead7c0;
+        }
+
+        .admin-card-header h2 {
+            font-family: "Playfair Display", serif;
+            font-size: 26px;
+            color: #2d2926;
+        }
+
+        /* Form Styles */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #6b635b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-control {
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid #d8c8bb;
+            background: #f7efe5;
+            font-size: 14px;
+            color: #2d2926;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #b45f4d;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(180, 95, 77, 0.15);
+        }
+
+        /* Data Tables */
+        .data-table-container {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .data-table th, .data-table td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid #ead7c0;
+            font-size: 14px;
+        }
+
+        .data-table th {
+            background: #f7efe5;
+            color: #8c3d3d;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table tr:hover {
+            background: rgba(247, 239, 229, 0.5);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .custom-upload-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #product-image {
+            display: none;
+        }
+
+        .custom-upload-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            width: fit-content;
+            padding: 12px 22px;
+            border-radius: 12px;
+            background: #8c3d3d;
+            color: #ffffff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
+
+        .custom-upload-btn:hover {
+            background: #b45f4d;
+            transform: translateY(-2px);
+        }
+
+        #selected-file-name {
+            color: #6b635b;
+            font-size: 14px;
+        }
+
+        .image-preview {
+            width: 180px;
+            border-radius: 12px;
+            border: 2px solid #ead7c0;
+        }
+
+        .btn-edit { background: #e0a96d; color: #ffffff; }
+        .btn-edit:hover { background: #c88f53; }
+
+        .btn-delete { background: #d9534f; color: #ffffff; }
+        .btn-delete:hover { background: #c9302c; }
+
+        .btn-whatsapp { background: #25d366; color: #ffffff; }
+        .btn-whatsapp:hover { background: #1da851; }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-confirmed { background: #d4edda; color: #155724; }
+        .status-ontheway { background: #cce5ff; color: #004085; }
+        .status-delivered { background: #d1ecf1; color: #0c5460; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Admin Header -->
+    <header class="admin-header">
+        <div class="admin-logo">
+            RJ <span>Fashion</span> Admin Portal
+        </div>
+        <div>
+            <a href="index.html" class="btn secondary" style="padding: 8px 20px; font-size: 13px;">
+                <i class="fa-solid fa-store"></i> View Main Shop
+            </a>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Navigation Tabs -->
+        <div class="admin-nav-tabs">
+            <button class="tab-btn active" data-tab="products-tab">
+                <i class="fa-solid fa-shirt"></i> Product Catalog
+            </button>
+            <button class="tab-btn" data-tab="orders-tab">
+                <i class="fa-brands fa-whatsapp"></i> WhatsApp Orders & Status
+            </button>
+            <button class="tab-btn" data-tab="coupons-tab">
+                <i class="fa-solid fa-ticket"></i> Coupons & Category Offers
+            </button>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 1. PRODUCTS MANAGEMENT SECTION -->
+        <!-- ========================================== -->
+        <section id="products-tab" class="admin-section active">
+            <!-- Add / Edit Product Form -->
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2 id="product-form-title">Add New Product</h2>
+                    <button id="cancel-edit-btn" class="btn secondary" style="display: none; padding: 6px 16px; font-size: 12px;">Cancel Edit</button>
+                </div>
+                <form id="product-form" enctype="multipart/form-data">
+                    <input type="hidden" id="product-id">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="prod-name">Product Name *</label>
+                            <input type="text" id="prod-name" class="form-control" placeholder="e.g. Terracotta Silk Kurti" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="prod-price">Price (₹) *</label>
+                            <input type="number" id="prod-price" class="form-control" placeholder="e.g. 1299" required min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="prod-category">Category *</label>
+                            <select id="prod-category" class="form-control" required>
+                                <option value="tops">Tops</option>
+                                <option value="kurtis">Kurtis</option>
+                                <option value="sarees">Sarees</option>
+                                <option value="accessories">Accessories</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="prod-sizes">Sizes (Comma separated)</label>
+                            <input type="text" id="prod-sizes" class="form-control" placeholder="S, M, L, XL" value="S, M, L">
+                        </div>
+                        <!-- PRODUCT VARIANTS SECTION -->
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label style="font-size:16px; color:#2d2926;">
+                                Product Colors / Variants
+                            </label>
+
+                            <div id="variants-container">
+                                <!-- Variant Item -->
+                                <div class="variant-item" style="border:1px solid #ead7c0; padding:16px; border-radius:14px; margin-bottom:15px; background:#fffaf5;">
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label>Variant Name</label>
+                                            <input type="text" class="form-control variant-name" placeholder="e.g. Teal Blue">
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label>Swatch Type</label>
+                                            <select class="form-control variant-swatch-type">
+                                                <option value="color">Solid Color</option>
+                                                <option value="image">Printed / Mixed Color</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="form-group color-picker-group">
+                                            <label>Color Picker</label>
+                                            <input type="color" class="form-control variant-color" value="#0f766e">
+                                        </div>
+
+                                        <div class="form-group swatch-image-group" style="display:none;">
+                                            <label>Swatch Image</label>
+                                            <div class="variant-upload-wrapper">
+                                                <label class="variant-upload-btn">
+                                                    <i class="fa-solid fa-image"></i>
+                                                    Choose Swatch
+                                                    <input type="file"
+                                                        class="variant-upload-input variant-swatch-image"
+                                                        accept="image/*">
+                                                </label>
+                                                <span class="variant-file-name">No swatch selected</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group" style="grid-column: 1 / -1;">
+                                            <div class="variant-upload-wrapper">
+                                                <label class="variant-upload-btn">
+                                                    <i class="fa-solid fa-images"></i>
+                                                    Choose Photos
+                                                    <input type="file" class="variant-upload-input variant-images" accept="image/*" multiple>
+                                                </label>
+
+                                                <span class="variant-file-name">No photos selected</span>
+
+                                                <div class="variant-preview-grid"></div>
+                                            </div>
+
+                                            <small style="color:#6b635b;">Hold Ctrl to select multiple images at once.</small>
+                                        </div>
+                                        
+                                    </div>
+
+                                    <button type="button" class="btn-sm btn-delete remove-variant-btn" style="margin-top:10px;">
+                                        <i class="fa-solid fa-trash"></i> Remove Color
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button type="button" id="add-variant-btn" class="btn secondary" style="margin-top:10px;">
+                                <i class="fa-solid fa-plus"></i> Add Another Color
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" id="save-prod-btn" class="btn primary" style="margin-top: 20px;">
+                        <i class="fa-solid fa-plus"></i> Save Product
+                    </button>
+                </form>
+            </div>
+
+            <!-- Existing Products List -->
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>Live Catalog (<span id="total-products-count">0</span> Items)</h2>
+                    <button id="reset-products-btn" class="btn secondary" style="padding: 6px 16px; font-size: 12px;">Reset to Defaults</button>
+                </div>
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>ID</th>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Colors</th>
+                                <th>Sizes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-products-tbody">
+                            <!-- Dynamically filled -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 2. WHATSAPP ORDERS & STATUS TRACKER SECTION -->
+        <!-- ========================================== -->
+        <section id="orders-tab" class="admin-section">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>WhatsApp Customer Orders Controller</h2>
+                    <button id="add-dummy-order-btn" class="btn secondary" style="padding: 6px 16px; font-size: 12px;">+ Add Sample Order</button>
+                </div>
+                <p style="color: #6b635b; margin-bottom: 20px; font-size: 14px;">
+                    Track placed orders, change status (Order Confirmed, On The Way, Delivered), and send automatic status update notifications directly to customers on WhatsApp.
+                </p>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer Name</th>
+                                <th>Phone</th>
+                                <th>Product & Size</th>
+                                <th>Amount</th>
+                                <th>Current Status</th>
+                                <th>Update Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-orders-tbody">
+                            <!-- Dynamically filled -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 3. COUPONS & CATEGORY OFFERS SECTION -->
+        <!-- ========================================== -->
+        <section id="coupons-tab" class="admin-section">
+            <!-- Add Coupon Form -->
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>Add Coupon Code</h2>
+                </div>
+                <form id="coupon-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="coupon-code">Coupon Code *</label>
+                            <input type="text" id="coupon-code" class="form-control" placeholder="e.g. RJ799" required style="text-transform: uppercase;">
+                        </div>
+                        <div class="form-group">
+                            <label for="coupon-discount">Discount (%) *</label>
+                            <input type="number" id="coupon-discount" class="form-control" placeholder="e.g. 10" required min="1" max="100">
+                        </div>
+                        <div class="form-group">
+                            <label for="coupon-min-spend">Min Purchase Threshold (₹) *</label>
+                            <input type="number" id="coupon-min-spend" class="form-control" placeholder="799" value="799" required min="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="coupon-desc">Description</label>
+                            <input type="text" id="coupon-desc" class="form-control" placeholder="10% OFF on orders above ₹799+">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn primary" style="margin-top: 20px;">
+                        <i class="fa-solid fa-ticket"></i> Create Coupon
+                    </button>
+                </form>
+            </div>
+
+            <!-- Active Coupons List -->
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>Active Coupon Codes</h2>
+                </div>
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Discount</th>
+                                <th>Min Purchase Rule</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-coupons-tbody">
+                            <!-- Dynamically filled -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Category Offers Management -->
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>Category Collection Offers</h2>
+                </div>
+                <p style="color: #6b635b; margin-bottom: 20px; font-size: 14px;">
+                    Apply automatic percentage discounts to specific categories (Tops, Kurtis, Sarees, Accessories) visible across the boutique storefront.
+                </p>
+                <form id="category-offer-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="offer-category">Category *</label>
+                            <select id="offer-category" class="form-control" required>
+                                <option value="sarees">Sarees</option>
+                                <option value="kurtis">Kurtis</option>
+                                <option value="tops">Tops</option>
+                                <option value="accessories">Accessories</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="offer-discount">Offer Discount (%) *</label>
+                            <input type="number" id="offer-discount" class="form-control" placeholder="e.g. 15" required min="0" max="90">
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="offer-banner-text">Offer Banner Text *</label>
+                            <input type="text" id="offer-banner-text" class="form-control" placeholder="Festive Sale: Flat 15% OFF on Sarees Collection!" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn primary" style="margin-top: 20px;">
+                        <i class="fa-solid fa-bullhorn"></i> Save Category Offer
+                    </button>
+                </form>
+
+                <div class="data-table-container" style="margin-top: 25px;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Offer Discount</th>
+                                <th>Banner Headline</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-offers-tbody">
+                            <!-- Dynamically filled -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Firebase SDK (v10 compat CDN) -->
+    <script src="admin.js"></script>
+</body>
+</html>
