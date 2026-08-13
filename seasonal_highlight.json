@@ -1,0 +1,11 @@
+{
+  "label": "SEASON HIGHLIGHT",
+  "title": "Curated Artisanal Crafts",
+  "description": "Immerse yourself in luxurious textures, vibrant terracotta hues, and intricate embroidery. Every piece tells a story of modern retro style.",
+  "rotationInterval": 3000,
+  "productIds": [
+    "1001",
+    "1017",
+    "1016"
+  ]
+}

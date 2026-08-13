@@ -48,6 +48,27 @@ document.addEventListener("DOMContentLoaded", function () {
     const registerForm = document.getElementById("register-form");
     const authErrorMsg = document.getElementById("auth-error-msg");
     const authNavSlot = document.getElementById("auth-nav-slot");
+    const headerCart = document.getElementById("header-cart");
+    const cartToggleBtn = document.getElementById("cart-toggle-btn");
+    const cartDrawer = document.getElementById("cart-drawer");
+    const cartOverlay = document.getElementById("cart-overlay");
+    const cartCloseBtn = document.getElementById("cart-close-btn");
+    const cartItemsEl = document.getElementById("cart-items");
+    const cartCountEl = document.getElementById("cart-count");
+    const cartSubtotalEl = document.getElementById("cart-subtotal");
+    const cartDiscountRow = document.getElementById("cart-discount-row");
+    const cartDiscountEl = document.getElementById("cart-discount");
+    const cartTotalEl = document.getElementById("cart-total");
+    const cartCouponInput = document.getElementById("cart-coupon-input");
+    const cartCouponMessage = document.getElementById("cart-coupon-message");
+    const cartApplyCouponBtn = document.getElementById("cart-apply-coupon-btn");
+    const cartCheckoutBtn = document.getElementById("cart-checkout-btn");
+    const seasonalHighlightImages = document.getElementById("seasonal-highlight-images");
+    const seasonalHighlightLabel = document.getElementById("seasonal-highlight-label");
+    const seasonalHighlightTitle = document.getElementById("seasonal-highlight-title");
+    const seasonalHighlightDescription = document.getElementById("seasonal-highlight-description");
+    let seasonalHighlightTimer;
+    let seasonalHighlightTransitionTimer;
 
     // ==========================================
     // ADMIN CREDENTIALS (Hardcoded for localStorage mode)
@@ -78,10 +99,35 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function saveSession(sessionObj) {
         saveStoredData("rj_session", sessionObj);
+        localStorage.setItem("rj_user", JSON.stringify(sessionObj));
     }
 
     function clearSession() {
         localStorage.removeItem("rj_session");
+        localStorage.removeItem("rj_user");
+    }
+
+    function isLoggedIn() {
+        return Boolean(localStorage.getItem("rj_user"));
+    }
+
+    function guardWhatsAppCheckout(event) {
+        if (isLoggedIn()) return true;
+        event?.preventDefault();
+        const options = {
+            icon: "info",
+            title: "Login required",
+            text: "Please login to continue checkout.",
+            confirmButtonText: "Login"
+        };
+        if (window.Swal) {
+            Swal.fire(options).then(() => {
+                document.getElementById("login-section")?.scrollIntoView({ behavior: "smooth" });
+            });
+        } else {
+            window.alert(options.text);
+        }
+        return false;
     }
 
     // Get registered customers list
@@ -152,6 +198,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 };
             }
         }
+        updateCartVisibility();
     }
 
     function handleLogout() {
@@ -343,6 +390,108 @@ document.addEventListener("DOMContentLoaded", function () {
     let activeOffers = getStoredData("rj_offers", []);
     let allOrders = getStoredData("rj_orders", []);
     let appliedCoupon = null;
+    let cart = getStoredData("rj_cart", []);
+    let cartCoupon = null;
+
+    const fallbackVariantColors = {
+        blue: "#7fd6e8", "navy blue": "#7fd6e8",
+        maroon: "#7a2f38", brown: "#7a2f38",
+        yellow: "#d7a52f"
+    };
+
+    function getVariantSwatchColor(variant, label) {
+        const value = variant.swatchValue || variant.value || variant.hex || variant.code || variant.color || "";
+        if (/^https?:\/\//i.test(String(value))) return value;
+        const isHexColor = /^#[0-9a-f]{3,8}$/i.test(String(value));
+        if (isHexColor && String(value).toLowerCase() !== "#0f766e") return value;
+        return fallbackVariantColors[String(label || "").trim().toLowerCase()] || (isHexColor ? value : "#d8c8bb");
+    }
+
+    function getProductColors(product) {
+        const colors = Array.isArray(product.colors) ? product.colors : (Array.isArray(product.variants) ? product.variants : []);
+        const normalized = colors.map((color, index) => {
+            if (typeof color === "string") return { name: color, value: fallbackVariantColors[color.trim().toLowerCase()] || color, image: product.image || "" };
+            return {
+                name: color.label || color.name || `Color ${index + 1}`,
+                value: getVariantSwatchColor(color, color.label || color.name),
+                image: color.image || (Array.isArray(color.images) ? color.images[0] : "") || product.image || ""
+            };
+        });
+        return normalized.length ? normalized : [{ name: "Default", value: "#d8c8bb", image: getPrimaryImage(product) || "" }];
+    }
+
+    function getCartTotals() {
+        const subtotal = cart.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.qty) || 0), 0);
+        let discount = 0;
+        if (cartCoupon && subtotal >= Number(cartCoupon.minSpend || 0)) {
+            discount = String(cartCoupon.discountType || cartCoupon.type || "").toLowerCase() === "fixed"
+                ? Number(cartCoupon.discount || 0)
+                : subtotal * (Number(cartCoupon.discount || 0) / 100);
+            discount = Math.min(discount, subtotal);
+        }
+        return { subtotal, discount: Math.round(discount), total: Math.max(0, Math.round(subtotal - discount)) };
+    }
+
+    function renderCart() {
+        if (!cartItemsEl) return;
+        const { subtotal, discount, total } = getCartTotals();
+        cartItemsEl.innerHTML = cart.length ? cart.map((item, index) => `
+            <article class="cart-item"><img src="${item.image}" alt="${item.name}"><div class="cart-item-info"><strong>${item.name}</strong><small>${item.color} · ${item.size}</small><span>₹${Number(item.price) * item.qty}</span><div class="cart-qty"><button type="button" data-cart-qty="${index}" data-change="-1" aria-label="Decrease quantity">−</button><b>${item.qty}</b><button type="button" data-cart-qty="${index}" data-change="1" aria-label="Increase quantity">+</button><button type="button" class="cart-remove" data-cart-remove="${index}">Remove</button></div></div></article>`).join("") : '<p class="cart-empty">Your bag is waiting for a beautiful pick.</p>';
+        if (cartCountEl) cartCountEl.textContent = cart.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+        if (cartSubtotalEl) cartSubtotalEl.textContent = `₹${subtotal}`;
+        if (cartDiscountEl) cartDiscountEl.textContent = `-₹${discount}`;
+        if (cartDiscountRow) cartDiscountRow.hidden = !discount;
+        if (cartTotalEl) cartTotalEl.textContent = `₹${total}`;
+        if (cartCheckoutBtn) cartCheckoutBtn.disabled = !cart.length;
+    }
+
+    function saveCart() { saveStoredData("rj_cart", cart); renderCart(); }
+    function openCart() { cartDrawer?.classList.add("open"); cartOverlay.hidden = false; cartDrawer?.setAttribute("aria-hidden", "false"); }
+    function closeCart() { cartDrawer?.classList.remove("open"); cartOverlay.hidden = true; cartDrawer?.setAttribute("aria-hidden", "true"); }
+    function addToCart(product, card) {
+        const color = card.dataset.selectedColor || "Default";
+        const size = card.dataset.selectedSize || "Standard";
+        const image = card.dataset.selectedImage || getPrimaryImage(product) || "";
+        const existing = cart.find(item => String(item.productId) === String(product.id) && item.color === color && item.size === size);
+        if (existing) existing.qty += 1;
+        else cart.push({ productId: product.id, name: product.name, price: Number(product.price), image, color, size, qty: 1 });
+        saveCart(); openCart();
+    }
+
+    function updateCartVisibility() {
+        const loggedIn = isLoggedIn();
+        if (headerCart) headerCart.style.display = loggedIn ? "flex" : "none";
+        if (cartToggleBtn) cartToggleBtn.hidden = !loggedIn;
+        document.querySelectorAll(".btn-cart").forEach(button => { button.hidden = !loggedIn; });
+        if (!loggedIn) closeCart();
+    }
+
+    cartToggleBtn?.addEventListener("click", openCart);
+    cartCloseBtn?.addEventListener("click", closeCart);
+    cartOverlay?.addEventListener("click", closeCart);
+    cartItemsEl?.addEventListener("click", event => {
+        const remove = event.target.closest("[data-cart-remove]");
+        const quantity = event.target.closest("[data-cart-qty]");
+        if (remove) { cart.splice(Number(remove.dataset.cartRemove), 1); saveCart(); }
+        if (quantity) { const item = cart[Number(quantity.dataset.cartQty)]; if (!item) return; item.qty += Number(quantity.dataset.change); if (item.qty < 1) cart.splice(Number(quantity.dataset.cartQty), 1); saveCart(); }
+    });
+    cartApplyCouponBtn?.addEventListener("click", () => {
+        const code = String(cartCouponInput?.value || "").trim().toLowerCase();
+        const coupon = getStoredData("rj_coupons", []).find(item => String(item.code || "").trim().toLowerCase() === code && item.active && (!item.expiryDate && !item.expiry || new Date(`${item.expiryDate || item.expiry}T23:59:59`) >= new Date()));
+        if (!coupon) { cartCoupon = null; cartCouponMessage.textContent = "Enter a valid active coupon that has not expired."; cartCouponMessage.className = "cart-coupon-message error"; renderCart(); return; }
+        if (getCartTotals().subtotal < Number(coupon.minSpend || 0)) { cartCoupon = null; cartCouponMessage.textContent = `This coupon requires a minimum order of ₹${coupon.minSpend}.`; cartCouponMessage.className = "cart-coupon-message error"; renderCart(); return; }
+        cartCoupon = coupon; cartCouponMessage.textContent = `${coupon.code} applied.`; cartCouponMessage.className = "cart-coupon-message success"; renderCart();
+    });
+    cartCheckoutBtn?.addEventListener("click", () => {
+        if (!guardWhatsAppCheckout()) return;
+        if (!cart.length) return;
+        const session = getCurrentSession(); const totals = getCartTotals(); const orderRef = `RJ-${Math.floor(1000 + Math.random() * 9000)}`;
+        const lines = cart.map(item => `• ${item.name} — ${item.color}, ${item.size} × ${item.qty}: ₹${Number(item.price) * item.qty}`).join("\n");
+        const couponLine = cartCoupon ? `\nCoupon: ${cartCoupon.code}\nDiscount: ₹${totals.discount}` : "";
+        const message = `Hi RJ Ladies Fashion! I would like to place an order.\n\nOrder Ref: ${orderRef}\nCustomer: ${session?.name || "Guest Customer"}\n\nItems:\n${lines}\n\nSubtotal: ₹${totals.subtotal}${couponLine}\nFinal Total: ₹${totals.total}\n\nPlease confirm my order and share delivery details!`;
+        allOrders = getStoredData("rj_orders", []); allOrders.unshift({ id: orderRef, customerName: session?.name || "Guest Customer", phone: "", product: cart.map(item => item.name).join(", "), size: "Cart order", amount: totals.total, status: "Order Confirmed", date: new Date().toISOString().split("T")[0] }); saveStoredData("rj_orders", allOrders);
+        window.open(`https://wa.me/919567308831?text=${encodeURIComponent(message)}`, "_blank");
+    });
 
     // Mobile Navbar Navigation Toggle
     if (mobileToggle && navLinks) {
@@ -377,6 +526,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (loader) loader.style.display = "none";
         renderAnnouncementBar();
+        loadSeasonalHighlight();
         renderProducts(allProducts);
     }
 
@@ -423,6 +573,90 @@ document.addEventListener("DOMContentLoaded", function () {
         const firstVariant = product.variants && product.variants[0];
         return (firstVariant && (firstVariant.image || (firstVariant.images && firstVariant.images[0]))) || product.image;
     }
+
+    function escapeHtml(value = '') {
+        return String(value).replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
+    }
+
+    // Seasonal content is static while only the selected product imagery rotates.
+    async function loadSeasonalHighlight() {
+        if (!seasonalHighlightImages) return;
+        const defaults = {
+            label: 'SEASON HIGHLIGHT', title: 'Curated Artisanal Crafts',
+            description: 'Immerse yourself in luxurious textures, vibrant terracotta hues, and intricate embroidery. Every piece tells a story of modern retro style.',
+            rotationInterval: 5000, productIds: []
+        };
+        let settings = defaults;
+        try {
+            const response = await fetch(`${API_BASE}/api/seasonal-highlight`);
+            if (response.ok) settings = { ...defaults, ...await response.json() };
+        } catch (error) {
+            console.warn('Seasonal highlight settings unavailable; using catalog defaults.');
+        }
+
+        seasonalHighlightLabel.textContent = settings.label || defaults.label;
+        seasonalHighlightTitle.textContent = settings.title || defaults.title;
+        seasonalHighlightDescription.textContent = settings.description || defaults.description;
+        const requestedIds = Array.isArray(settings.productIds) ? settings.productIds.map(String) : [];
+        let products = requestedIds.map((id) => allProducts.find((product) => String(product.id) === id)).filter(Boolean);
+        if (!products.length) products = allProducts.slice(0, 10);
+        products = products.filter((product) => getPrimaryImage(product));
+
+        if (!products.length) {
+            seasonalHighlightImages.innerHTML = '';
+            return;
+        }
+
+        let position = 0;
+        let isSeasonalMediaHovered = false;
+        const renderPair = () => {
+            const pair = [products[position], products[(position + 1) % products.length]];
+            seasonalHighlightImages.innerHTML = pair.map((product) => `
+                <article class="seasonal-highlight-card is-entering">
+                    <a href="product.html?id=${encodeURIComponent(product.id)}" aria-label="View ${escapeHtml(product.name)}">
+                        <img src="${escapeHtml(getPrimaryImage(product))}" alt="" loading="lazy">
+                    </a>
+                </article>`).join('');
+            requestAnimationFrame(() => seasonalHighlightImages.querySelectorAll('.seasonal-highlight-card').forEach((card) => card.classList.remove('is-entering')));
+        };
+
+        clearInterval(seasonalHighlightTimer);
+        clearTimeout(seasonalHighlightTransitionTimer);
+        renderPair();
+
+        const stopSeasonalRotation = () => {
+            clearInterval(seasonalHighlightTimer);
+            seasonalHighlightTimer = undefined;
+        };
+        const showNextPair = () => {
+            seasonalHighlightImages.querySelectorAll('.seasonal-highlight-card').forEach((card) => card.classList.add('is-leaving'));
+            clearTimeout(seasonalHighlightTransitionTimer);
+            seasonalHighlightTransitionTimer = setTimeout(() => {
+                position = (position + 2) % products.length;
+                renderPair();
+            }, 280);
+        };
+        const startSeasonalRotation = () => {
+            stopSeasonalRotation();
+            if (products.length > 1 && !isSeasonalMediaHovered) {
+                seasonalHighlightTimer = setInterval(showNextPair, 5000);
+            }
+        };
+
+        // Hover behavior is intentionally limited to the image/media area.
+        seasonalHighlightImages.onmouseenter = () => {
+            isSeasonalMediaHovered = true;
+            stopSeasonalRotation();
+            clearTimeout(seasonalHighlightTransitionTimer);
+            seasonalHighlightTransitionTimer = undefined;
+            seasonalHighlightImages.querySelectorAll('.seasonal-highlight-card').forEach((card) => card.classList.remove('is-leaving'));
+        };
+        seasonalHighlightImages.onmouseleave = () => {
+            isSeasonalMediaHovered = false;
+            startSeasonalRotation();
+        };
+        startSeasonalRotation();
+    }
     // ==========================================
     // 3. RENDER PRODUCTS
     // ==========================================
@@ -444,6 +678,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         productsToRender.forEach(product => {
             const defaultSize = (product.size && product.size.length > 0) ? product.size[0] : "Standard";
+            const colors = getProductColors(product);
+            const defaultColor = colors[0];
             
             const categoryOffer = activeOffers.find(o => o.active && o.category.toLowerCase() === product.category.toLowerCase());
             let categoryDiscountPct = categoryOffer ? categoryOffer.discount : 0;
@@ -486,16 +722,22 @@ document.addEventListener("DOMContentLoaded", function () {
             card.className = "product-card";
             card.setAttribute("data-id", product.id);
             card.setAttribute("data-selected-size", defaultSize);
+            card.setAttribute("data-selected-color", defaultColor.name);
+            card.setAttribute("data-selected-image", defaultColor.image);
+            card.setAttribute("role", "link");
+            card.setAttribute("tabindex", "0");
+            card.setAttribute("aria-label", `View details for ${product.name}`);
 
             card.innerHTML = `
                 <div class="product-image-box">
                     <span class="category-tag">${product.category}</span>
                     ${badgeHtml}
-                    <img src="${getPrimaryImage(product)}" alt="${product.name}" loading="lazy">
+                    <img src="${defaultColor.image}" alt="${product.name}" loading="lazy">
                 </div>
                 <div class="product-info">
                     <h3 class="product-title">${product.name}</h3>
                     ${priceHtml}
+                    <div class="color-selector"><label>Color:</label><div class="color-options">${colors.map((color, index) => `<button type="button" class="color-swatch ${index === 0 ? "selected" : ""}" data-color="${color.name}" data-image="${color.image}" title="${color.name}" aria-label="${color.name}" style="--swatch-color: ${color.value}; ${String(color.value).startsWith("http") ? `background-image:url('${color.value}')` : ""}"></button>`).join("")}</div><p class="selected-color-text">Selected: ${defaultColor.name}</p></div>
                     
                     <div class="size-selector">
                         <label>Select Size:</label>
@@ -504,9 +746,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         </div>
                     </div>
 
-                    <a href="#" class="whatsapp-order-btn">
-                        <i class="fa-brands fa-whatsapp"></i> Order on WhatsApp
-                    </a>
+                    <div class="product-cart-actions"><button type="button" class="add-to-cart-btn btn-cart"><i class="fa-solid fa-bag-shopping"></i> Add to Cart</button><button type="button" class="whatsapp-order-btn"><i class="fa-brands fa-whatsapp"></i> Checkout</button></div>
                 </div>
             `;
 
@@ -519,15 +759,41 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
             });
 
+            const swatches = card.querySelectorAll(".color-swatch");
+            swatches.forEach(swatch => swatch.addEventListener("click", function () {
+                swatches.forEach(item => item.classList.remove("selected")); this.classList.add("selected");
+                card.dataset.selectedColor = this.dataset.color;
+                card.dataset.selectedImage = this.dataset.image;
+                card.querySelector(".product-image-box img").src = this.dataset.image;
+                const selectedColorText = card.querySelector(".selected-color-text");
+                if (selectedColorText) selectedColorText.textContent = `Selected: ${this.dataset.color}`;
+            }));
+
+            card.querySelector(".add-to-cart-btn").addEventListener("click", () => addToCart(product, card));
+
             const whatsappBtn = card.querySelector(".whatsapp-order-btn");
             whatsappBtn.addEventListener("click", function (e) {
                 e.preventDefault();
-                const selectedSize = card.getAttribute("data-selected-size") || "Standard";
-                processWhatsAppCheckout(product, selectedSize, basePrice, finalPayable, categoryDiscountPct);
+                if (!guardWhatsAppCheckout(e)) return;
+                addToCart(product, card);
+            });
+
+            const openProductPage = () => {
+                window.location.href = `product.html?id=${encodeURIComponent(product.id)}`;
+            };
+            card.addEventListener("click", (event) => {
+                if (!event.target.closest(".size-btn, .color-swatch, .add-to-cart-btn, .whatsapp-order-btn")) openProductPage();
+            });
+            card.addEventListener("keydown", (event) => {
+                if ((event.key === "Enter" || event.key === " ") && !event.target.closest(".size-btn, .color-swatch, .add-to-cart-btn, .whatsapp-order-btn")) {
+                    event.preventDefault();
+                    openProductPage();
+                }
             });
 
             productsGrid.appendChild(card);
         });
+        updateCartVisibility();
     }
 
     // ==========================================
@@ -670,5 +936,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // INITIALIZE
     // ==========================================
     renderAuthNavbar();
+    renderCart();
     loadProducts();
 });

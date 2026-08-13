@@ -4,6 +4,7 @@ import cloudinary
 import cloudinary.uploader
 import os
 import json
+import re
 
 app = Flask(__name__)
 CORS(app)
@@ -17,6 +18,16 @@ cloudinary.config(
 )
 
 PRODUCTS_FILE = 'products/products.json'
+CATEGORIES_FILE = 'categories.json'
+SEASONAL_HIGHLIGHT_FILE = 'seasonal_highlight.json'
+
+DEFAULT_SEASONAL_HIGHLIGHT = {
+    'label': 'SEASON HIGHLIGHT',
+    'title': 'Curated Artisanal Crafts',
+    'description': 'Immerse yourself in luxurious textures, vibrant terracotta hues, and intricate embroidery. Every piece tells a story of modern retro style.',
+    'rotationInterval': 3000,
+    'productIds': []
+}
 
 
 def load_products():
@@ -29,6 +40,45 @@ def load_products():
 def save_products(products):
     with open(PRODUCTS_FILE, 'w', encoding='utf-8') as f:
         json.dump(products, f, indent=2, ensure_ascii=False)
+
+
+def load_categories():
+    if not os.path.exists(CATEGORIES_FILE):
+        return []
+    with open(CATEGORIES_FILE, 'r', encoding='utf-8') as f:
+        categories = json.load(f)
+    # Accept the original string format if it ever exists, while serving objects.
+    return [item if isinstance(item, dict) else {'id': slugify(item), 'name': item} for item in categories]
+
+
+def save_categories(categories):
+    with open(CATEGORIES_FILE, 'w', encoding='utf-8') as f:
+        json.dump(categories, f, indent=2, ensure_ascii=False)
+
+
+def load_seasonal_highlight():
+    if not os.path.exists(SEASONAL_HIGHLIGHT_FILE):
+        return DEFAULT_SEASONAL_HIGHLIGHT.copy()
+    try:
+        with open(SEASONAL_HIGHLIGHT_FILE, 'r', encoding='utf-8') as f:
+            saved = json.load(f)
+        return {**DEFAULT_SEASONAL_HIGHLIGHT, **saved}
+    except (json.JSONDecodeError, OSError):
+        return DEFAULT_SEASONAL_HIGHLIGHT.copy()
+
+
+def save_seasonal_highlight(settings):
+    with open(SEASONAL_HIGHLIGHT_FILE, 'w', encoding='utf-8') as f:
+        json.dump(settings, f, indent=2, ensure_ascii=False)
+
+
+def slugify(name):
+    return re.sub(r'-+', '-', re.sub(r'[^a-z0-9]+', '-', str(name).lower()).strip('-'))
+
+
+def category_name_from_request():
+    payload = request.get_json(silent=True) or request.form
+    return str(payload.get('name', '')).strip()
 
 
 def upload_image(image):
@@ -87,6 +137,125 @@ def get_variants_from_request():
 @app.route('/api/products', methods=['GET'])
 def get_products():
     return jsonify(load_products())
+
+
+@app.route('/api/seasonal-highlight', methods=['GET'])
+def get_seasonal_highlight():
+    return jsonify(load_seasonal_highlight())
+
+
+@app.route('/api/seasonal-highlight', methods=['PUT'])
+def update_seasonal_highlight():
+    payload = request.get_json(silent=True) or {}
+    product_ids = payload.get('productIds', [])
+    if not isinstance(product_ids, list):
+        return jsonify({'success': False, 'message': 'Product IDs must be a list.'}), 400
+    if len(product_ids) > 10:
+        return jsonify({'success': False, 'message': 'Select up to 10 products.'}), 400
+
+    available_ids = {str(product.get('id')) for product in load_products()}
+    normalized_ids = []
+    for product_id in product_ids:
+        product_id = str(product_id)
+        if product_id not in available_ids:
+            return jsonify({'success': False, 'message': 'One or more selected products no longer exist.'}), 400
+        if product_id not in normalized_ids:
+            normalized_ids.append(product_id)
+
+    try:
+        interval = int(payload.get('rotationInterval', 3000))
+    except (TypeError, ValueError):
+        return jsonify({'success': False, 'message': 'Rotation interval must be a number.'}), 400
+    interval = max(1000, min(interval, 60000))
+    settings = {
+        'label': str(payload.get('label', '')).strip(),
+        'title': str(payload.get('title', '')).strip(),
+        'description': str(payload.get('description', '')).strip(),
+        'rotationInterval': interval,
+        'productIds': normalized_ids
+    }
+    save_seasonal_highlight(settings)
+    return jsonify({'success': True, 'settings': settings})
+
+
+@app.route('/api/categories', methods=['GET'])
+def get_categories():
+    return jsonify(load_categories())
+
+
+@app.route('/api/categories', methods=['POST'])
+def add_category():
+    name = category_name_from_request()
+    if not name:
+        return jsonify({'success': False, 'message': 'Please enter a category name.'}), 400
+
+    categories = load_categories()
+    if any(category.get('name', '').casefold() == name.casefold() for category in categories):
+        return jsonify({'success': False, 'message': 'Category already exists.'}), 409
+
+    base_id = slugify(name)
+    if not base_id:
+        return jsonify({'success': False, 'message': 'Please enter a valid category name.'}), 400
+    category_id = base_id
+    suffix = 2
+    existing_ids = {category.get('id') for category in categories}
+    while category_id in existing_ids:
+        category_id = f'{base_id}-{suffix}'
+        suffix += 1
+
+    category = {'id': category_id, 'name': name}
+    categories.append(category)
+    save_categories(categories)
+    return jsonify({'success': True, 'category': category}), 201
+
+
+@app.route('/api/categories/<category_id>', methods=['PUT'])
+def rename_category(category_id):
+    name = category_name_from_request()
+    if not name:
+        return jsonify({'success': False, 'message': 'Please enter a category name.'}), 400
+
+    categories = load_categories()
+    category = next((item for item in categories if item.get('id') == category_id), None)
+    if not category:
+        return jsonify({'success': False, 'message': 'Category not found.'}), 404
+    if any(item.get('id') != category_id and item.get('name', '').casefold() == name.casefold() for item in categories):
+        return jsonify({'success': False, 'message': 'Category already exists.'}), 409
+
+    old_name = category['name']
+    category['name'] = name
+    save_categories(categories)
+
+    # Product categories store display names today, so keep them aligned for a future rename UI.
+    products = load_products()
+    changed = False
+    for product in products:
+        if str(product.get('category', '')).casefold() == old_name.casefold():
+            product['category'] = name
+            changed = True
+    if changed:
+        save_products(products)
+
+    return jsonify({'success': True, 'category': category})
+
+
+@app.route('/api/categories/<category_id>', methods=['DELETE'])
+def delete_category(category_id):
+    categories = load_categories()
+    category = next((item for item in categories if item.get('id') == category_id), None)
+    if not category:
+        return jsonify({'success': False, 'message': 'Category not found.'}), 404
+
+    products_in_category = [product for product in load_products() if str(product.get('category', '')).casefold() == category['name'].casefold()]
+    if products_in_category:
+        return jsonify({
+            'success': False,
+            'message': f'This category is currently used by {len(products_in_category)} products and cannot be deleted.',
+            'productCount': len(products_in_category)
+        }), 409
+
+    save_categories([item for item in categories if item.get('id') != category_id])
+    return jsonify({'success': True})
 
 
 @app.route('/api/products', methods=['POST'])

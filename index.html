@@ -16,7 +16,6 @@
     <link rel="stylesheet" href="style.css">
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="script.js"></script>
 </head>
 <body>
 
@@ -48,6 +47,11 @@
                 <li><a href="#collection">Collection</a></li>
                 <li><a href="#products-section">Products</a></li>
                 <li><a href="#about">About</a></li>
+                <li id="header-cart">
+                    <button id="cart-toggle-btn" class="cart-toggle-btn" aria-label="Open shopping cart">
+                        <i class="fa-solid fa-bag-shopping"></i><span>Cart</span><b id="cart-count" class="cart-count">0</b>
+                    </button>
+                </li>
                 
                 <!-- Auth & Admin Navigation Slot -->
                 <li id="auth-nav-slot">
@@ -73,17 +77,35 @@
         </div>
     </section>
 
-    <!-- Featured Collection Banner Section -->
-    <section class="collection-promo" id="collection">
-        <div class="container promo-grid">
-            <div class="promo-image">
-                <img src="images/banners/collection-banner.jpg" alt="Collection Banner" loading="lazy">
-            </div>
-            <div class="promo-text">
-                <span class="badge">SEASON HIGHLIGHT</span>
-                <h2 id="promo-headline">Curated Artisanal Crafts</h2>
-                <p id="promo-subtext">Immerse yourself in luxurious textures, vibrant terracotta hues, and intricate embroidery. Every piece tells a story of modern retro style.</p>
-                <a href="#products-section" class="btn primary-sm">Shop The Look</a>
+    <div id="cart-overlay" class="cart-overlay" hidden></div>
+    <aside id="cart-drawer" class="cart-drawer" aria-label="Shopping cart" aria-hidden="true">
+        <div class="cart-drawer-header">
+            <h2>Your Bag</h2><button id="cart-close-btn" class="cart-close-btn" aria-label="Close cart"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="cart-items" class="cart-items"></div>
+        <div class="cart-coupon">
+            <label for="cart-coupon-input">Coupon code</label>
+            <div><input id="cart-coupon-input" type="text" placeholder="Enter coupon code"><button id="cart-apply-coupon-btn" type="button">Apply</button></div>
+            <p id="cart-coupon-message" class="cart-coupon-message"></p>
+        </div>
+        <div class="cart-totals">
+            <p><span>Subtotal</span><strong id="cart-subtotal">₹0</strong></p>
+            <p id="cart-discount-row" hidden><span>Discount</span><strong id="cart-discount">-₹0</strong></p>
+            <p class="cart-total"><span>Total</span><strong id="cart-total">₹0</strong></p>
+        </div>
+        <button id="cart-checkout-btn" class="cart-checkout-btn" type="button"><i class="fa-brands fa-whatsapp"></i> Checkout on WhatsApp</button>
+    </aside>
+
+    <!-- Seasonal editorial highlight; its settings and product IDs are managed in Admin. -->
+    <section class="seasonal-highlight" id="collection" aria-labelledby="seasonal-highlight-title">
+        <div class="container seasonal-highlight-grid">
+            <div id="seasonal-highlight-images" class="seasonal-highlight-images" aria-live="polite"></div>
+            <div class="seasonal-highlight-copy">
+                <span id="seasonal-highlight-label" class="seasonal-highlight-label">SEASON HIGHLIGHT</span>
+                <div class="seasonal-highlight-divider" aria-hidden="true"></div>
+                <h2 id="seasonal-highlight-title">Curated Artisanal Crafts</h2>
+                <p id="seasonal-highlight-description">Immerse yourself in luxurious textures, vibrant terracotta hues, and intricate embroidery. Every piece tells a story of modern retro style.</p>
+                <a href="#products-section" class="seasonal-highlight-explore">Explore collection <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
             </div>
         </div>
     </section>
