@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const applyCouponBtn = document.getElementById("apply-coupon-btn");
     const removeCouponBtn = document.getElementById("remove-coupon-btn");
     const couponMessage = document.getElementById("coupon-message");
+    const announcementBar = document.getElementById("announcement-bar");
     const announcementText = document.getElementById("announcement-text");
 
     // Modal Order Tracker
@@ -47,6 +48,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const loginForm = document.getElementById("login-form");
     const registerForm = document.getElementById("register-form");
     const authErrorMsg = document.getElementById("auth-error-msg");
+    const loginEmailInput = document.getElementById("login-email");
+    const loginPasswordInput = document.getElementById("login-password");
+    const loginError = document.getElementById("loginError");
+    const loginErrorText = document.getElementById("loginErrorText");
+    const loginErrorClose = document.querySelector(".login-error-close");
     const authNavSlot = document.getElementById("auth-nav-slot");
     const headerCart = document.getElementById("header-cart");
     const cartToggleBtn = document.getElementById("cart-toggle-btn");
@@ -64,11 +70,16 @@ document.addEventListener("DOMContentLoaded", function () {
     const cartApplyCouponBtn = document.getElementById("cart-apply-coupon-btn");
     const cartCheckoutBtn = document.getElementById("cart-checkout-btn");
     const seasonalHighlightImages = document.getElementById("seasonal-highlight-images");
+    const seasonalHighlightPagination = document.getElementById("seasonal-highlight-pagination");
     const seasonalHighlightLabel = document.getElementById("seasonal-highlight-label");
     const seasonalHighlightTitle = document.getElementById("seasonal-highlight-title");
     const seasonalHighlightDescription = document.getElementById("seasonal-highlight-description");
     let seasonalHighlightTimer;
     let seasonalHighlightTransitionTimer;
+    let announcementRotationTimer;
+    let announcementTransitionTimer;
+    let announcementCoupons = [];
+    let announcementIndex = 0;
 
     // ==========================================
     // ADMIN CREDENTIALS (Hardcoded for localStorage mode)
@@ -223,6 +234,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function closeAuthModal() {
         if (authModal) authModal.style.display = "none";
         hideAuthError();
+        hideLoginError();
     }
 
     function showLoginTab() {
@@ -231,6 +243,7 @@ document.addEventListener("DOMContentLoaded", function () {
         loginForm.style.display = "block";
         registerForm.style.display = "none";
         hideAuthError();
+        hideLoginError();
     }
 
     function showRegisterTab() {
@@ -239,6 +252,7 @@ document.addEventListener("DOMContentLoaded", function () {
         registerForm.style.display = "block";
         loginForm.style.display = "none";
         hideAuthError();
+        hideLoginError();
     }
 
     function showAuthError(msg) {
@@ -250,6 +264,19 @@ document.addEventListener("DOMContentLoaded", function () {
         authErrorMsg.style.display = "none";
         authErrorMsg.textContent = "";
     }
+
+    function showLoginError(message) {
+        loginErrorText.textContent = message;
+        loginError.classList.remove("hidden");
+    }
+
+    function hideLoginError() {
+        loginError.classList.add("hidden");
+    }
+
+    if (loginErrorClose) loginErrorClose.addEventListener("click", hideLoginError);
+    if (loginEmailInput) loginEmailInput.addEventListener("input", hideLoginError);
+    if (loginPasswordInput) loginPasswordInput.addEventListener("input", hideLoginError);
 
     // Wire up modal controls
     if (openAuthBtn) openAuthBtn.addEventListener("click", openAuthModal);
@@ -272,8 +299,8 @@ document.addEventListener("DOMContentLoaded", function () {
         loginForm.addEventListener("submit", function (e) {
             e.preventDefault();
 
-            const emailInput = document.getElementById("login-email").value.trim().toLowerCase();
-            const passwordInput = document.getElementById("login-password").value;
+            const emailInput = loginEmailInput.value.trim().toLowerCase();
+            const passwordInput = loginPasswordInput.value;
 
             // Check Admin Credentials
             if (emailInput === ADMIN_EMAIL && passwordInput === ADMIN_PASSWORD) {
@@ -283,6 +310,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     role: "admin",
                     loggedInAt: new Date().toISOString()
                 });
+                hideLoginError();
                 closeAuthModal();
                 renderAuthNavbar();
                 // Redirect to Admin Portal
@@ -303,6 +331,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     role: "customer",
                     loggedInAt: new Date().toISOString()
                 });
+                hideLoginError();
                 closeAuthModal();
                 renderAuthNavbar();
                 Swal.fire({
@@ -312,12 +341,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     confirmButtonColor: "#8c3d3d"
                 });
             } else {
-                Swal.fire({
-                    icon: "error",
-                    title: "Login failed",
-                    text: "Invalid email or password.",
-                    confirmButtonColor: "#8c3d3d"
-                });
+                showLoginError("Incorrect username or password.");
             }
         });
     }
@@ -552,20 +576,55 @@ document.addEventListener("DOMContentLoaded", function () {
     // ==========================================
     // 2. ANNOUNCEMENT BAR
     // ==========================================
-    function renderAnnouncementBar() {
-        if (!announcementText) return;
-        activeCoupons = getStoredData("rj_coupons", []);
-        activeOffers = getStoredData("rj_offers", []);
+    function formatCouponAnnouncement(coupon) {
+        return `<i class="fa-solid fa-ticket" aria-hidden="true"></i> Special Offer: Use coupon code <strong class="coupon-tag">${escapeHtml(coupon.code)}</strong> for ${escapeHtml(coupon.discount)}% OFF on orders above ₹${escapeHtml(coupon.minSpend)}+`;
+    }
 
-        const validCoupon = activeCoupons.find(c => c.active);
-        const validOffer = activeOffers.find(o => o.active);
+    function displayAnnouncementCoupon(index, animate = false) {
+        const coupon = announcementCoupons[index];
+        if (!coupon || !announcementText) return;
 
-        if (validCoupon) {
-            announcementText.innerHTML = `<i class="fa-solid fa-bullhorn"></i> Special Offer: Use code <strong class="coupon-tag">${validCoupon.code}</strong> for ${validCoupon.discount}% OFF on orders above ₹${validCoupon.minSpend}+!`;
-        } else if (validOffer) {
-            announcementText.innerHTML = `<i class="fa-solid fa-fire"></i> ${validOffer.bannerText}`;
+        const updateMessage = () => {
+            announcementText.innerHTML = formatCouponAnnouncement(coupon);
+            announcementText.classList.remove("is-changing");
+        };
+
+        clearTimeout(announcementTransitionTimer);
+        if (animate) {
+            announcementText.classList.add("is-changing");
+            announcementTransitionTimer = setTimeout(updateMessage, 280);
+        } else {
+            updateMessage();
         }
     }
+
+    function renderAnnouncementBar() {
+        if (!announcementText || !announcementBar) return;
+        clearInterval(announcementRotationTimer);
+        clearTimeout(announcementTransitionTimer);
+        activeCoupons = getStoredData("rj_coupons", []);
+        announcementCoupons = activeCoupons.filter((coupon) => coupon && coupon.active && coupon.code);
+        announcementIndex = 0;
+
+        if (!announcementCoupons.length) {
+            announcementText.textContent = "";
+            announcementBar.hidden = true;
+            return;
+        }
+
+        announcementBar.hidden = false;
+        displayAnnouncementCoupon(announcementIndex);
+        if (announcementCoupons.length > 1) {
+            announcementRotationTimer = setInterval(() => {
+                announcementIndex = (announcementIndex + 1) % announcementCoupons.length;
+                displayAnnouncementCoupon(announcementIndex, true);
+            }, 5500);
+        }
+    }
+
+    window.addEventListener("storage", (event) => {
+        if (event.key === "rj_coupons") renderAnnouncementBar();
+    });
     // ==========================================
     // PRODUCT IMAGE HELPER (supports variants)
     // ==========================================
@@ -604,13 +663,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!products.length) {
             seasonalHighlightImages.innerHTML = '';
+            if (seasonalHighlightPagination) seasonalHighlightPagination.innerHTML = '';
             return;
         }
 
-        let position = 0;
+        const seasonalSlides = [];
+        for (let start = 0; start < products.length; start += 2) {
+            seasonalSlides.push([products[start], products[(start + 1) % products.length]]);
+        }
+        let activeSeasonalSlide = 0;
         let isSeasonalMediaHovered = false;
         const renderPair = () => {
-            const pair = [products[position], products[(position + 1) % products.length]];
+            const pair = seasonalSlides[activeSeasonalSlide];
             seasonalHighlightImages.innerHTML = pair.map((product) => `
                 <article class="seasonal-highlight-card is-entering">
                     <a href="product.html?id=${encodeURIComponent(product.id)}" aria-label="View ${escapeHtml(product.name)}">
@@ -619,9 +683,21 @@ document.addEventListener("DOMContentLoaded", function () {
                 </article>`).join('');
             requestAnimationFrame(() => seasonalHighlightImages.querySelectorAll('.seasonal-highlight-card').forEach((card) => card.classList.remove('is-entering')));
         };
+        const updateSeasonalActiveDot = () => {
+            seasonalHighlightPagination?.querySelectorAll('.seasonal-highlight-dot').forEach((dot, index) => {
+                const isActive = index === activeSeasonalSlide;
+                dot.classList.toggle('is-active', isActive);
+                dot.setAttribute('aria-current', isActive ? 'true' : 'false');
+            });
+        };
+        const renderSeasonalDots = () => {
+            if (!seasonalHighlightPagination) return;
+            seasonalHighlightPagination.innerHTML = seasonalSlides.map((_, index) => `<button class="seasonal-highlight-dot${index === activeSeasonalSlide ? ' is-active' : ''}" type="button" aria-label="Show seasonal slide ${index + 1}" aria-current="${index === activeSeasonalSlide ? 'true' : 'false'}"></button>`).join('');
+        };
 
         clearInterval(seasonalHighlightTimer);
         clearTimeout(seasonalHighlightTransitionTimer);
+        renderSeasonalDots();
         renderPair();
 
         const stopSeasonalRotation = () => {
@@ -632,8 +708,9 @@ document.addEventListener("DOMContentLoaded", function () {
             seasonalHighlightImages.querySelectorAll('.seasonal-highlight-card').forEach((card) => card.classList.add('is-leaving'));
             clearTimeout(seasonalHighlightTransitionTimer);
             seasonalHighlightTransitionTimer = setTimeout(() => {
-                position = (position + 2) % products.length;
+                activeSeasonalSlide = (activeSeasonalSlide + 1) % seasonalSlides.length;
                 renderPair();
+                updateSeasonalActiveDot();
             }, 280);
         };
         const startSeasonalRotation = () => {
@@ -655,6 +732,19 @@ document.addEventListener("DOMContentLoaded", function () {
             isSeasonalMediaHovered = false;
             startSeasonalRotation();
         };
+        if (seasonalHighlightPagination) {
+            seasonalHighlightPagination.onclick = (event) => {
+                const dot = event.target.closest('.seasonal-highlight-dot');
+                if (!dot) return;
+                const slideIndex = [...seasonalHighlightPagination.children].indexOf(dot);
+                if (slideIndex < 0) return;
+                clearTimeout(seasonalHighlightTransitionTimer);
+                activeSeasonalSlide = slideIndex;
+                renderPair();
+                updateSeasonalActiveDot();
+                if (!isSeasonalMediaHovered) startSeasonalRotation();
+            };
+        }
         startSeasonalRotation();
     }
     // ==========================================

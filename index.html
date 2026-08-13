@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="RJ Ladies Fashion - Premium ethnic wear, sarees, kurtis, tops and accessories with modern retro elegance.">
     <title>RJ Ladies Fashion | Timeless Boutique Collection</title>
+    <!-- Favicon / Tab icon -->
+    <link rel="icon" type="image/png" href="images/rjlogo.png">
+
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,9 +23,9 @@
 <body>
 
     <!-- Top Announcement & Offers Ticker Bar -->
-    <div class="top-announcement-bar" id="announcement-bar">
+    <div class="top-announcement-bar" id="announcement-bar" hidden>
         <div class="container announcement-content">
-            <span id="announcement-text">
+            <span id="announcement-text" aria-live="polite">
                 <i class="fa-solid fa-bullhorn"></i> Special Offer: Use coupon code <strong class="coupon-tag">RJ799</strong> for 10% OFF on orders above ₹799+
             </span>
             <!--<button id="track-order-header-btn" class="track-link-btn">
@@ -35,7 +38,7 @@
     <header>
         <nav class="navbar">
             <div class="logo">
-                <a href="#">RJ <span>Fashion</span></a>
+                <a href="#">R<span>J</span> <span>Ladies</span> <span>Fashion</span></a>
             </div>
             
             <button class="mobile-toggle" id="mobile-toggle" aria-label="Toggle menu">
@@ -99,7 +102,10 @@
     <!-- Seasonal editorial highlight; its settings and product IDs are managed in Admin. -->
     <section class="seasonal-highlight" id="collection" aria-labelledby="seasonal-highlight-title">
         <div class="container seasonal-highlight-grid">
-            <div id="seasonal-highlight-images" class="seasonal-highlight-images" aria-live="polite"></div>
+            <div class="seasonal-highlight-media">
+                <div id="seasonal-highlight-images" class="seasonal-highlight-images" aria-live="polite"></div>
+                <div id="seasonal-highlight-pagination" class="seasonal-highlight-pagination" aria-label="Seasonal highlight slides"></div>
+            </div>
             <div class="seasonal-highlight-copy">
                 <span id="seasonal-highlight-label" class="seasonal-highlight-label">SEASON HIGHLIGHT</span>
                 <div class="seasonal-highlight-divider" aria-hidden="true"></div>
@@ -119,7 +125,7 @@
                 <p>Select size, apply coupon code & order directly on WhatsApp</p>
             </div>
 
-            <!-- Global Coupon Code Applied Bar -->
+            <!-- Global Coupon Code Applied Bar 
             <div class="global-coupon-box">
                 <div class="coupon-input-wrapper">
                     <i class="fa-solid fa-ticket icon"></i>
@@ -128,7 +134,7 @@
                     <button id="remove-coupon-btn" class="btn secondary-sm" style="display: none;">Remove</button>
                 </div>
                 <div id="coupon-message" class="coupon-msg"></div>
-            </div>
+            </div>-->
 
             <!-- Category Filter Buttons -->
             <div class="filter-container">
@@ -201,6 +207,7 @@
         </div>
     </div>
 
+    
     <!-- Unified Auth Modal (Client & Admin Login / Register) -->
     <div id="auth-modal" class="modal-overlay" style="display: none;">
         <div class="modal-card auth-modal-card">
@@ -216,6 +223,10 @@
                 <div class="modal-header" style="text-align: center; margin-bottom: 20px;">
                     <h3>Welcome Back</h3>
                     <p>Log in as Customer or Admin</p>
+                </div>
+                <div id="loginError" class="login-error hidden" role="alert">
+                    <span id="loginErrorText">Incorrect username or password.</span>
+                    <button type="button" class="login-error-close" aria-label="Close error">&times;</button>
                 </div>
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label for="login-email">Email or Username *</label>
@@ -277,7 +288,7 @@
             <div class="footer-contact">
                 <h4>Contact Us</h4>
                 <p><i class="fa-brands fa-whatsapp"></i> WhatsApp Order Desk</p>
-                <p><i class="fa-solid fa-location-dot"></i> RJ Ladies Fashion Boutique</p>
+                <p><i class="fa-solid fa-location-dot"></i> RJ Ladies Fashion Fashion Kannamam Kollam</p>
             </div>
         </div>
         <div class="footer-bottom">

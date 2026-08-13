@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function selectCategory(select, categoryNameToSelect) {
     if (!select) return;
-    const match = [...select.options].find((option) => option.value.casefold() === String(categoryNameToSelect || '').casefold());
+    const match = [...select.options].find((option) => String(option.value).toLowerCase() === String(categoryNameToSelect || '').toLowerCase());
     if (match) select.value = match.value;
     else if (select.options.length) select.value = select.options[0].value;
   }
@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function productCount(category) {
-    return (window.currentProducts || []).filter((product) => String(product.category || '').casefold() === category.name.casefold()).length;
+    return (window.currentProducts || []).filter((product) => String(product.category || '').toLowerCase() === String(category.name).toLowerCase()).length;
   }
 
   function renderCategories() {
@@ -461,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
     event.preventDefault();
     const code = document.getElementById('coupon-code').value.trim().toUpperCase();
     const coupons = readLocal('rj_coupons');
-    if (coupons.some((coupon) => String(coupon.code).casefold() === code.casefold())) return showError('A coupon with this code already exists.');
+    if (coupons.some((coupon) => String(coupon.code).toLowerCase() === String(code).toLowerCase())) return showError('A coupon with this code already exists.');
     coupons.unshift({ code, discount: Number(document.getElementById('coupon-discount').value), minSpend: Number(document.getElementById('coupon-min-spend').value), description: document.getElementById('coupon-desc').value.trim(), active: true });
     saveLocal('rj_coupons', coupons); event.target.reset(); renderCoupons(); showSuccess('Coupon created successfully');
   });
@@ -484,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const category = offerCategory.value;
     const offers = readLocal('rj_offers');
     const offer = { category, discount: Number(document.getElementById('offer-discount').value), bannerText: document.getElementById('offer-banner-text').value.trim(), active: true };
-    const index = offers.findIndex((item) => String(item.category).casefold() === category.casefold());
+    const index = offers.findIndex((item) => String(item.category).toLowerCase() === String(category).toLowerCase());
     if (index >= 0) offers[index] = { ...offers[index], ...offer }; else offers.unshift(offer);
     saveLocal('rj_offers', offers); event.target.reset(); selectCategory(offerCategory, category); renderOffers(); showSuccess('Category offer saved successfully');
   });
@@ -503,6 +503,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const seasonalSelected = document.getElementById('seasonal-selected-products');
   const seasonalPreview = document.getElementById('seasonal-highlight-preview');
   let seasonalSettings = { label: '', title: '', description: '', rotationInterval: 3000, productIds: [] };
+  let seasonalPreviewSlide = 0;
+  let seasonalPreviewTimer;
   const seasonalImage = (product) => product?.variants?.[0]?.image || product?.variants?.[0]?.images?.[0] || product?.image || '';
 
   function selectedSeasonalProducts() {
@@ -533,13 +535,26 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderSeasonalPreview() {
     if (!seasonalPreview) return;
     syncSeasonalSettingsFromForm();
-    const selected = selectedSeasonalProducts().slice(0, 2);
+    const previewProducts = selectedSeasonalProducts();
+    const previewSlides = [];
+    for (let start = 0; start < previewProducts.length; start += 2) {
+      previewSlides.push([previewProducts[start], previewProducts[(start + 1) % previewProducts.length]]);
+    }
+    seasonalPreviewSlide = previewSlides.length ? seasonalPreviewSlide % previewSlides.length : 0;
+    const selected = previewSlides[seasonalPreviewSlide] || [];
     seasonalPreview.innerHTML = `<div class="seasonal-preview__layout">
       <div class="seasonal-preview__media">${selected.length
         ? selected.map((product) => `<img class="seasonal-preview__image" src="${escapeHtml(seasonalImage(product))}" alt="">`).join('')
-        : '<p class="seasonal-preview__empty">Select products to preview the image area.</p>'}</div>
+        : '<p class="seasonal-preview__empty">Select products to preview the image area.</p>'}${selected.length ? `<div class="seasonal-preview__pagination" aria-hidden="true">${previewSlides.map((_, index) => `<span class="seasonal-preview__dot${index === seasonalPreviewSlide ? ' is-active' : ''}"></span>`).join('')}</div>` : ''}</div>
       <div class="seasonal-preview__content"><span class="seasonal-preview-label">${escapeHtml(seasonalSettings.label || 'SEASON HIGHLIGHT')}</span><div class="seasonal-preview__divider" aria-hidden="true"></div><h3>${escapeHtml(seasonalSettings.title || 'Seasonal title')}</h3><p>${escapeHtml(seasonalSettings.description || 'Your seasonal editorial description will appear here.')}</p></div>
     </div>`;
+    clearInterval(seasonalPreviewTimer);
+    if (previewSlides.length > 1) {
+      seasonalPreviewTimer = setInterval(() => {
+        seasonalPreviewSlide = (seasonalPreviewSlide + 1) % previewSlides.length;
+        renderSeasonalPreview();
+      }, 5000);
+    }
   }
 
   async function loadSeasonalHighlight() {

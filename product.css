@@ -1,27 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Poppins:wght@300;400;500;600;700&display=swap');
+
 :root {
-    --cream: #f7efe5;
+    --primary: #d96b8a;
+    --primary-dark: #b94f6e;
+    --primary-light: #f8d7df;
+    --bg-main: #fff8f7;
+    --bg-section: #fdf1f3;
+    --border: #edd3da;
+    --cream: var(--bg-main);
     --surface: #ffffff;
-    --beige: #d8c8bb;
-    --maroon: #8c3d3d;
-    --terracotta: #b45f4d;
-    --ink: #2d2926;
-    --muted: #6b635b;
+    --beige: var(--border);
+    --maroon: var(--primary-dark);
+    --terracotta: var(--primary);
+    --ink: #2f2326;
+    --muted: #8a7278;
     --green: #25d366;
-    --shadow: 0 10px 30px rgba(45, 41, 38, .10);
+    --shadow: 0 8px 24px rgba(217, 107, 138, .10);
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--cream); color: var(--ink); font-family: "Poppins", sans-serif; }
+body { margin: 0; background: var(--cream); color: #5f4b52; font-family: "Poppins", sans-serif; }
 button, a { font: inherit; }
 
 .product-header { min-height: 70px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px clamp(18px, 5vw, 72px); background: var(--surface); border-bottom: 1px solid rgba(216, 200, 187, .72); }
-.product-brand { color: var(--ink); font: 700 26px "Playfair Display", serif; text-decoration: none; }
+.product-brand { color: var(--ink); font: 600 28px "Cormorant Garamond", "Playfair Display", serif; text-decoration: none; }
 .product-brand span { color: var(--terracotta); }
 .back-link { color: var(--maroon); font-size: 14px; font-weight: 600; text-decoration: none; }
 
 .product-page { width: min(1260px, calc(100% - 32px)); margin: 28px auto 70px; }
 .product-loading, .not-found { min-height: 48vh; display: grid; place-content: center; gap: 12px; color: var(--muted); text-align: center; }
-.not-found h1 { margin: 0; font: 700 clamp(30px, 6vw, 46px) "Playfair Display", serif; color: var(--ink); }
+.not-found h1, .product-title, .recommendation-heading { font-family: "Cormorant Garamond", "Playfair Display", serif; font-weight: 600; color: var(--ink); }
 .shop-link { display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 12px; color: #fff; background: var(--maroon); text-decoration: none; font-weight: 600; }
 
 .product-layout { display: grid; gap: 28px; }
@@ -35,7 +43,7 @@ button, a { font: inherit; }
 .thumbnail-button.is-selected { border-color: var(--maroon); }
 .thumbnail-button img { width: 100%; height: 100%; object-fit: cover; }
 
-.details-panel { background: var(--surface); border: 1px solid rgba(216, 200, 187, .8); border-radius: 18px; padding: clamp(20px, 4vw, 34px); box-shadow: var(--shadow); }
+.details-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: clamp(20px, 4vw, 34px); box-shadow: var(--shadow); }
 .category-label { margin: 0 0 6px; color: var(--maroon); font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .product-title { margin: 0; font: 700 clamp(29px, 4vw, 42px)/1.2 "Playfair Display", serif; }
 .product-price { margin: 14px 0 4px; color: var(--maroon); font-size: 27px; font-weight: 700; }

@@ -168,19 +168,6 @@
     "image": "images/accessories/accessory-02.jpg"
   },
   {
-    "id": 1015,
-    "name": "kurthi",
-    "price": "1199",
-    "category": "kurtis",
-    "description": "",
-    "image": "https://res.cloudinary.com/fv05tjzl/image/upload/v1786155985/kpanlmbrzky0rctt8yxs.jpg",
-    "size": [
-      "S",
-      "M",
-      "L"
-    ]
-  },
-  {
     "id": 1016,
     "name": "top",
     "price": "699",
