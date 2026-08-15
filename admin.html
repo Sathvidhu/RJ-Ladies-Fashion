@@ -400,6 +400,26 @@
                                         </div>
 
                                         <div class="form-group">
+                                            <label>Size</label>
+                                            <input type="text" class="form-control variant-size" placeholder="e.g. M" value="Standard">
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label>SKU</label>
+                                            <input type="text" class="form-control variant-sku" placeholder="Optional: generated automatically">
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label>Variant Price (₹)</label>
+                                            <input type="number" class="form-control variant-price" min="0" placeholder="Uses product price when blank">
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label>Stock</label>
+                                            <input type="number" class="form-control variant-stock" min="0" value="0">
+                                        </div>
+
+                                        <div class="form-group">
                                             <label>Swatch Type</label>
                                             <select class="form-control variant-swatch-type">
                                                 <option value="color">Solid Color</option>
@@ -679,7 +699,9 @@
 
     </div>
 
-    <!-- Firebase SDK (v10 compat CDN) -->
+    <!-- Supabase client and existing project configuration -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
     <script src="admin.js"></script>
 </body>
 </html>

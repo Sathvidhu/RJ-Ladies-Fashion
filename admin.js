@@ -23,7 +23,79 @@ if (!session || session.role !== 'admin') {
     .then(() => { window.location.href = 'index.html'; });
 }
 
+// Seasonal-highlight settings still use the existing local API.
 const API_BASE = 'http://127.0.0.1:5000';
+const slugify = (value = '') => String(value).trim().toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || `item-${Date.now()}`;
+const requireSupabase = () => {
+  if (!window.supabaseClient) {
+    throw new Error('Supabase client is not available. Check that supabase.js loads before admin.js.');
+  }
+  return window.supabaseClient;
+};
+
+const CLOUDINARY_UPLOAD_URL = 'https://api.cloudinary.com/v1_1/fv05tjzl/image/upload';
+const CLOUDINARY_UPLOAD_PRESET = 'RJ_Ladies_Fashion';
+
+async function uploadProductImageToCloudinary(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+  const response = await fetch(CLOUDINARY_UPLOAD_URL, { method: 'POST', body: formData });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.secure_url) {
+    throw new Error(result.error?.message || 'Cloudinary could not upload the product image.');
+  }
+  return result.secure_url;
+}
+
+async function getAvailableProductSlug(name, currentProductId = '') {
+  const baseSlug = slugify(name);
+  let candidate = baseSlug;
+  let suffix = 2;
+
+  while (true) {
+    const { data, error } = await requireSupabase()
+      .from('products')
+      .select('id')
+      .eq('slug', candidate)
+      .limit(1);
+    if (error) throw error;
+
+    const conflictingProduct = (data || []).find((product) => String(product.id) !== String(currentProductId));
+    if (!conflictingProduct) return candidate;
+
+    candidate = `${baseSlug}-${suffix}`;
+    suffix += 1;
+  }
+}
+
+async function getAvailableVariantSku(baseSku, currentVariantId = '', reservedSkus = new Set()) {
+  const normalizedBaseSku = String(baseSku).trim();
+  let candidate = normalizedBaseSku;
+  let suffix = 2;
+
+  while (true) {
+    if (!reservedSkus.has(candidate)) {
+      const { data, error } = await requireSupabase()
+        .from('product_variants')
+        .select('id')
+        .eq('sku', candidate)
+        .limit(1);
+      if (error) throw error;
+
+      const conflictingVariant = (data || []).find((variant) => String(variant.id) !== String(currentVariantId));
+      if (!conflictingVariant) {
+        reservedSkus.add(candidate);
+        return candidate;
+      }
+    }
+
+    candidate = `${normalizedBaseSku}-${suffix}`;
+    suffix += 1;
+  }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('product-form');
@@ -41,19 +113,63 @@ document.addEventListener('DOMContentLoaded', () => {
     const variantData = window.adminVariants.collect();
     if (!variantData) return;
 
-    const formData = new FormData();
-    formData.append('name', document.getElementById('prod-name').value.trim());
-    formData.append('price', document.getElementById('prod-price').value);
-    formData.append('category', document.getElementById('prod-category').value);
-    formData.append('sizes', document.getElementById('prod-sizes').value);
-    formData.append('variants', JSON.stringify(variantData.variants));
-    variantData.files.forEach(({ field, file }) => formData.append(field, file));
-
-    const url = productId ? `${API_BASE}/api/products/${productId}` : `${API_BASE}/api/products`;
     try {
-      const response = await fetch(url, { method: productId ? 'PUT' : 'POST', body: formData });
-      const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || 'Failed to save product');
+      const name = document.getElementById('prod-name').value.trim();
+      const currentProduct = productId ? (window.currentProducts || []).find((item) => String(item.id) === String(productId)) : null;
+      const slug = currentProduct?.name === name && currentProduct.slug
+        ? currentProduct.slug
+        : await getAvailableProductSlug(name, productId);
+      const payload = { category_id: document.getElementById('prod-category').value, name, slug, description: '', compare_price: Number(document.getElementById('prod-price').value), fabric: '', is_featured: false, is_active: true };
+      let product;
+      if (productId) {
+        const { data, error } = await requireSupabase().from('products').update(payload).eq('id', productId).select().single();
+        if (error) throw error;
+        product = data;
+      } else {
+        const { data, error } = await requireSupabase().from('products').insert(payload).select().single();
+        if (error) throw error;
+        product = data;
+      }
+
+      const existingProduct = (window.currentProducts || []).find((item) => String(item.id) === String(product.id));
+      const existingVariantIds = new Set((existingProduct?.product_variants || []).map((variant) => String(variant.id)));
+      const savedVariants = [];
+      const reservedSkus = new Set();
+
+      for (const [index, variant] of variantData.variants.entries()) {
+        const requestedSku = variant.sku || `${slugify(name).toUpperCase()}-${index + 1}`;
+        const sku = await getAvailableVariantSku(requestedSku, variant.id, reservedSkus);
+        const variantPayload = {
+          product_id: product.id,
+          size: variant.size || 'Standard',
+          color: variant.label,
+          sku,
+          price: Number(variant.price || payload.compare_price),
+          stock: Number(variant.stock || 0),
+          is_active: true
+        };
+        let savedVariant;
+        if (variant.id) {
+          const { data, error } = await requireSupabase().from('product_variants').update(variantPayload).eq('id', variant.id).eq('product_id', product.id).select().single();
+          if (error) throw error;
+          savedVariant = data;
+          existingVariantIds.delete(String(variant.id));
+        } else {
+          const { data, error } = await requireSupabase().from('product_variants').insert(variantPayload).select().single();
+          if (error) throw error;
+          savedVariant = data;
+        }
+        savedVariants.push({ ...variant, id: savedVariant.id });
+      }
+
+      for (const variant of savedVariants) {
+        if (variant.imageFile) await saveVariantPrimaryImage(product.id, variant.id, variant.imageFile);
+      }
+
+      if (existingVariantIds.size) {
+        const { error } = await requireSupabase().from('product_variants').delete().in('id', [...existingVariantIds]);
+        if (error) throw error;
+      }
       showSuccess(productId ? 'Product updated successfully' : 'Product added successfully');
       resetForm();
       loadProducts();
@@ -63,11 +179,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  const primaryImage = (images = []) => [...images]
+    .sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || Number(a.sort_order || 0) - Number(b.sort_order || 0))[0] || null;
+
+  async function saveVariantPrimaryImage(productId, variantId, file) {
+    const imageUrl = await uploadProductImageToCloudinary(file);
+    const { data: existingImages, error: findError } = await requireSupabase()
+      .from('product_images')
+      .select('id')
+      .eq('product_id', productId)
+      .eq('product_variant_id', variantId)
+      .eq('is_primary', true)
+      .order('created_at', { ascending: true })
+      .limit(1);
+    if (findError) throw findError;
+
+    const imagePayload = { image_url: imageUrl, sort_order: 0, is_primary: true };
+    if (existingImages?.length) {
+      const { error } = await requireSupabase().from('product_images').update(imagePayload).eq('id', existingImages[0].id);
+      if (error) throw error;
+    } else {
+      const { error } = await requireSupabase().from('product_images').insert({
+        product_id: productId,
+        product_variant_id: variantId,
+        ...imagePayload
+      });
+      if (error) throw error;
+    }
+  }
+
   async function loadProducts() {
     try {
-      const response = await fetch(`${API_BASE}/api/products`);
-      if (!response.ok) throw new Error('Unable to load products');
-      const products = await response.json();
+      const { data: products, error } = await requireSupabase().from('products').select('*, categories(name), product_images(*), product_variants(*, product_images(*))').order('created_at', { ascending: false });
+      if (error) throw error;
       window.currentProducts = products;
       window.refreshAdminCategoryUI?.();
       window.refreshSeasonalHighlightManager?.();
@@ -75,21 +219,19 @@ document.addEventListener('DOMContentLoaded', () => {
       count.textContent = products.length;
 
       products.forEach((product) => {
-        const sizes = Array.isArray(product.size) ? product.size.join(', ') : (product.size || product.sizes || '-');
-        const variants = Array.isArray(product.variants) ? product.variants : [];
+        const variants = Array.isArray(product.product_variants) ? product.product_variants : [];
+        const sizes = variants.map((variant) => variant.size).filter(Boolean).join(', ') || '-';
         const colorsHtml = variants.length
           ? variants.map((variant) => {
-            const variantImage = variant.image || variant.images?.[0];
-            return variantImage
-              ? `<div class="variant-thumb" title="${variant.label}"><img src="${variantImage}" alt="${variant.label}"></div>`
-              : `<div class="variant-thumb variant-thumb-placeholder" title="${variant.label || 'Variant image unavailable'}" aria-label="${variant.label || 'Variant image unavailable'}"></div>`;
+            return `<div class="variant-thumb variant-thumb-placeholder" title="${variant.color || 'Variant'}" aria-label="${variant.color || 'Variant'}"></div>`;
           }).join('')
           : '<span style="color:#999;">—</span>';
-        const image = variants[0]?.image || variants[0]?.images?.[0] || product.image || '';
+        const image = primaryImage(product.product_images || [])?.image_url || '';
+        const categoryName = product.categories?.name || 'Uncategorized';
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${image ? `<img src="${image}" width="50" style="border-radius:6px;">` : '—'}</td>
-          <td>${product.id}</td><td>${product.name}</td><td>${product.category}</td><td>₹${product.price}</td>
+          <td>${product.id}</td><td>${product.name}</td><td>${categoryName}</td><td>₹${product.compare_price ?? '—'}</td>
           <td><div class="admin-colors-wrap">${colorsHtml}</div></td><td>${sizes}</td>
           <td><button type="button" class="btn-sm btn-edit" data-edit-id="${product.id}">Edit</button>
           <button type="button" class="btn-sm btn-delete" data-delete-id="${product.id}">Delete</button></td>`;
@@ -105,21 +247,19 @@ document.addEventListener('DOMContentLoaded', () => {
   tbody.addEventListener('click', async (event) => {
     const editId = event.target.closest('[data-edit-id]')?.dataset.editId;
     const deleteId = event.target.closest('[data-delete-id]')?.dataset.deleteId;
-    if (editId) editProduct(Number(editId));
-    if (deleteId) await deleteProduct(Number(deleteId));
+    if (editId) editProduct(editId);
+    if (deleteId) await deleteProduct(deleteId);
   });
 
   function editProduct(id) {
-    const product = window.currentProducts.find((item) => item.id === id);
+    const product = window.currentProducts.find((item) => String(item.id) === String(id));
     if (!product) return;
     document.getElementById('product-id').value = product.id;
     document.getElementById('prod-name').value = product.name || '';
-    document.getElementById('prod-price').value = product.price || '';
-    window.setAdminCategorySelect?.('prod-category', product.category || 'tops');
-    document.getElementById('prod-sizes').value = Array.isArray(product.size) ? product.size.join(', ') : (product.size || product.sizes || '');
-    const variants = Array.isArray(product.variants) && product.variants.length
-      ? product.variants
-      : [{ label: 'Default', swatchType: 'color', swatchValue: '#0f766e', image: product.image || '' }];
+    document.getElementById('prod-price').value = product.compare_price || '';
+    window.setAdminCategorySelect?.('prod-category', product.category_id);
+    document.getElementById('prod-sizes').value = product.product_variants?.map((variant) => variant.size).filter(Boolean).join(', ') || '';
+    const variants = product.product_variants?.length ? product.product_variants.map((variant) => ({ id: variant.id, label: variant.color, size: variant.size, sku: variant.sku, price: variant.price, stock: variant.stock, image: primaryImage(variant.product_images || [])?.image_url || '', swatchType: 'color', swatchValue: '#0f766e' })) : [{ label: 'Default', size: 'Standard', swatchType: 'color', swatchValue: '#0f766e' }];
     window.adminVariants.populate(variants);
     title.textContent = 'Edit Product';
     saveButton.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Update Product';
@@ -130,9 +270,8 @@ document.addEventListener('DOMContentLoaded', () => {
   async function deleteProduct(id) {
     if (!(await confirmDelete())) return;
     try {
-      const response = await fetch(`${API_BASE}/api/products/${id}`, { method: 'DELETE' });
-      const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || 'Failed to delete product');
+      const { error } = await requireSupabase().from('products').delete().eq('id', id);
+      if (error) throw error;
       if (document.getElementById('product-id').value === String(id)) resetForm();
       showSuccess('Product deleted successfully');
       loadProducts();
@@ -211,12 +350,17 @@ document.addEventListener('DOMContentLoaded', () => {
   function newItem(variant = {}) {
     const item = template.cloneNode(true);
     const legacyImage = Array.isArray(variant.images) ? variant.images[0] : '';
+    item.dataset.variantId = variant.id || '';
     item.dataset.existingImage = variant.image || legacyImage || '';
     item.dataset.existingSwatch = variant.swatchValue || '';
     item.dataset.solidSwatch = variant.swatchType === 'color' && variant.swatchValue
       ? variant.swatchValue
       : '#0f766e';
     item.querySelector('.variant-name').value = variant.label || '';
+    item.querySelector('.variant-size').value = variant.size || 'Standard';
+    item.querySelector('.variant-sku').value = variant.sku || '';
+    item.querySelector('.variant-price').value = variant.price ?? '';
+    item.querySelector('.variant-stock').value = variant.stock ?? 0;
     item.querySelector('.variant-swatch-type').value = variant.swatchType || 'color';
     item.querySelector('.variant-image').value = '';
     item.querySelector('.variant-swatch-image').value = '';
@@ -250,8 +394,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const swatchType = item.querySelector('.variant-swatch-type').value;
       const imageFile = item.querySelector('.variant-image').files[0];
       const existingImage = item.dataset.existingImage || '';
-      if (!label || (!imageFile && !existingImage)) {
-        showError('Each color needs a name and one product photo.');
+      if (!label) {
+        showError('Each variant needs a color name.');
         return null;
       }
       const swatchFile = item.querySelector('.variant-swatch-image').files[0];
@@ -261,10 +405,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
       }
       variants.push({
+        id: item.dataset.variantId || '',
         label,
+        size: item.querySelector('.variant-size').value.trim() || 'Standard',
+        sku: item.querySelector('.variant-sku').value.trim(),
+        price: item.querySelector('.variant-price').value,
+        stock: item.querySelector('.variant-stock').value,
         swatchType,
         swatchValue: swatchType === 'color' ? item.dataset.solidSwatch : existingSwatch,
-        image: existingImage
+        image: existingImage,
+        imageFile
       });
       if (imageFile) files.push({ field: `variant_image_${index}`, file: imageFile });
       if (swatchFile) files.push({ field: `variant_swatch_${index}`, file: swatchFile });
@@ -329,14 +479,15 @@ document.addEventListener('DOMContentLoaded', () => {
     [productCategory, offerCategory].forEach((select) => {
       if (!select) return;
       const selected = select.dataset.pendingCategory || select.value;
-      select.innerHTML = categories.map((category) => `<option value="${escapeHtml(category.name)}">${escapeHtml(category.name)}</option>`).join('');
+      const useCategoryId = select === productCategory;
+      select.innerHTML = categories.map((category) => `<option value="${escapeHtml(useCategoryId ? category.id : category.name)}">${escapeHtml(category.name)}</option>`).join('');
       selectCategory(select, selected);
       delete select.dataset.pendingCategory;
     });
   }
 
   function productCount(category) {
-    return (window.currentProducts || []).filter((product) => String(product.category || '').toLowerCase() === String(category.name).toLowerCase()).length;
+    return (window.currentProducts || []).filter((product) => String(product.category_id) === String(category.id)).length;
   }
 
   function renderCategories() {
@@ -352,10 +503,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadCategories() {
     try {
-      const response = await fetch(`${API_BASE}/api/categories`);
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Unable to load categories.');
-      categories = data;
+      const { data, error } = await requireSupabase().from('categories').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      categories = data || [];
       renderCategoryOptions();
       renderCategories();
     } catch (error) {
@@ -380,11 +530,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const name = categoryName.value.trim();
     if (!name) return showError('Please enter a category name.');
     try {
-      const response = await fetch(`${API_BASE}/api/categories`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name })
-      });
-      const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || 'Unable to add category.');
+      const { error } = await requireSupabase().from('categories').insert({ name, slug: slugify(name), image_url: null, is_active: true });
+      if (error) throw error;
       categoryForm.reset();
       await loadCategories();
       showSuccess('Category added successfully');
@@ -397,12 +544,11 @@ document.addEventListener('DOMContentLoaded', () => {
   categoryBody?.addEventListener('click', async (event) => {
     const categoryId = event.target.closest('[data-category-delete]')?.dataset.categoryDelete;
     if (!categoryId) return;
-    const category = categories.find((item) => item.id === categoryId);
+    const category = categories.find((item) => String(item.id) === String(categoryId));
     if (!category || !(await confirmAction(`Delete category “${category.name}”?`, 'This cannot be undone.'))) return;
     try {
-      const response = await fetch(`${API_BASE}/api/categories/${encodeURIComponent(categoryId)}`, { method: 'DELETE' });
-      const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || 'Unable to delete category.');
+      const { error } = await requireSupabase().from('categories').delete().eq('id', categoryId);
+      if (error) throw error;
       await loadCategories();
       showSuccess('Category deleted successfully');
     } catch (error) {
@@ -452,26 +598,77 @@ document.addEventListener('DOMContentLoaded', () => {
     saveLocal('rj_orders', orders); renderOrders(); showSuccess('Sample order added');
   });
 
+  let coupons = [];
+
   function renderCoupons() {
     if (!couponsBody) return;
-    const coupons = readLocal('rj_coupons');
-    couponsBody.innerHTML = coupons.length ? coupons.map((coupon) => `<tr><td>${escapeHtml(coupon.code)}</td><td>${escapeHtml(coupon.discount)}% OFF</td><td>₹${escapeHtml(coupon.minSpend)}+</td><td>${escapeHtml(coupon.description || '—')}</td><td>${coupon.active ? 'Active' : 'Inactive'}</td><td><div class="action-btns"><button class="btn-sm btn-edit" data-coupon-toggle="${escapeHtml(coupon.code)}">${coupon.active ? 'Disable' : 'Enable'}</button><button class="btn-sm btn-delete" data-coupon-delete="${escapeHtml(coupon.code)}">Delete</button></div></td></tr>`).join('') : '<tr><td colspan="6">No coupons yet.</td></tr>';
+    couponsBody.innerHTML = coupons.length ? coupons.map((coupon) => `<tr><td>${escapeHtml(coupon.code)}</td><td>${escapeHtml(coupon.discount_value)}${coupon.discount_type === 'percentage' ? '% OFF' : ' OFF'}</td><td>₹${escapeHtml(coupon.minimum_order_amount ?? 0)}+</td><td>${escapeHtml(coupon.description || '—')}</td><td>${coupon.is_active ? 'Active' : 'Inactive'}</td><td><div class="action-btns"><button class="btn-sm btn-edit" data-coupon-toggle="${escapeHtml(coupon.id)}">${coupon.is_active ? 'Disable' : 'Enable'}</button><button class="btn-sm btn-delete" data-coupon-delete="${escapeHtml(coupon.id)}">Delete</button></div></td></tr>`).join('') : '<tr><td colspan="6">No coupons yet.</td></tr>';
   }
-  document.getElementById('coupon-form')?.addEventListener('submit', (event) => {
+
+  async function loadCoupons() {
+    try {
+      const { data, error } = await requireSupabase().from('coupons').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      coupons = data || [];
+      renderCoupons();
+    } catch (error) {
+      console.error(error);
+      couponsBody.innerHTML = '<tr><td colspan="6">Unable to load coupons.</td></tr>';
+      showError(error.message || 'Unable to load coupons.');
+    }
+  }
+
+  document.getElementById('coupon-form')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const code = document.getElementById('coupon-code').value.trim().toUpperCase();
-    const coupons = readLocal('rj_coupons');
-    if (coupons.some((coupon) => String(coupon.code).toLowerCase() === String(code).toLowerCase())) return showError('A coupon with this code already exists.');
-    coupons.unshift({ code, discount: Number(document.getElementById('coupon-discount').value), minSpend: Number(document.getElementById('coupon-min-spend').value), description: document.getElementById('coupon-desc').value.trim(), active: true });
-    saveLocal('rj_coupons', coupons); event.target.reset(); renderCoupons(); showSuccess('Coupon created successfully');
+    if (!code) return showError('Please enter a coupon code.');
+    try {
+      const { error } = await requireSupabase().from('coupons').insert({
+        code,
+        description: document.getElementById('coupon-desc').value.trim() || null,
+        discount_type: 'percentage',
+        discount_value: Number(document.getElementById('coupon-discount').value),
+        minimum_order_amount: Number(document.getElementById('coupon-min-spend').value),
+        maximum_discount_amount: null,
+        usage_limit: null,
+        starts_at: null,
+        expires_at: null,
+        is_active: true
+      });
+      if (error) throw error;
+      event.target.reset();
+      await loadCoupons();
+      showSuccess('Coupon created successfully');
+    } catch (error) {
+      console.error(error);
+      showError(error.message || 'Unable to create coupon.');
+    }
   });
+
   couponsBody?.addEventListener('click', async (event) => {
-    const code = event.target.closest('[data-coupon-toggle]')?.dataset.couponToggle || event.target.closest('[data-coupon-delete]')?.dataset.couponDelete;
-    if (!code) return;
-    const coupons = readLocal('rj_coupons'); const coupon = coupons.find((item) => item.code === code);
-    if (event.target.closest('[data-coupon-toggle]')) { coupon.active = !coupon.active; saveLocal('rj_coupons', coupons); renderCoupons(); return showSuccess('Coupon updated'); }
-    if (!(await confirmAction(`Delete coupon “${code}”?`, 'This cannot be undone.'))) return;
-    saveLocal('rj_coupons', coupons.filter((item) => item.code !== code)); renderCoupons(); showSuccess('Coupon deleted successfully');
+    const toggleId = event.target.closest('[data-coupon-toggle]')?.dataset.couponToggle;
+    const deleteId = event.target.closest('[data-coupon-delete]')?.dataset.couponDelete;
+    const couponId = toggleId || deleteId;
+    if (!couponId) return;
+    const coupon = coupons.find((item) => String(item.id) === String(couponId));
+    if (!coupon) return;
+    try {
+      if (toggleId) {
+        const { error } = await requireSupabase().from('coupons').update({ is_active: !coupon.is_active }).eq('id', couponId);
+        if (error) throw error;
+        await loadCoupons();
+        showSuccess('Coupon updated successfully');
+        return;
+      }
+      if (!(await confirmAction(`Delete coupon “${coupon.code}”?`, 'This cannot be undone.'))) return;
+      const { error } = await requireSupabase().from('coupons').delete().eq('id', couponId);
+      if (error) throw error;
+      await loadCoupons();
+      showSuccess('Coupon deleted successfully');
+    } catch (error) {
+      console.error(error);
+      showError(error.message || 'Unable to update coupon.');
+    }
   });
 
   function renderOffers() {
@@ -616,6 +813,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCategories();
   loadSeasonalHighlight();
   renderOrders();
-  renderCoupons();
+  loadCoupons();
   renderOffers();
 });

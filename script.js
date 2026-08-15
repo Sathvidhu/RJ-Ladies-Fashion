@@ -82,12 +82,6 @@ document.addEventListener("DOMContentLoaded", function () {
     let announcementIndex = 0;
 
     // ==========================================
-    // ADMIN CREDENTIALS (Hardcoded for localStorage mode)
-    // ==========================================
-    const ADMIN_EMAIL = "admin@rjfashion.com";
-    const ADMIN_PASSWORD = "admin123";
-
-    // ==========================================
     // HELPERS
     // ==========================================
     function getStoredData(key, fallback) {
@@ -296,17 +290,33 @@ document.addEventListener("DOMContentLoaded", function () {
     // LOGIN FORM HANDLER
     // ==========================================
     if (loginForm) {
-        loginForm.addEventListener("submit", function (e) {
+        loginForm.addEventListener("submit", async function (e) {
             e.preventDefault();
 
             const emailInput = loginEmailInput.value.trim().toLowerCase();
             const passwordInput = loginPasswordInput.value;
 
-            // Check Admin Credentials
-            if (emailInput === ADMIN_EMAIL && passwordInput === ADMIN_PASSWORD) {
+            // Admin credentials are verified against Supabase; customer login remains unchanged.
+            let adminUser = null;
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('admin_users')
+                    .select('*')
+                    .eq('email', emailInput)
+                    .eq('password_hash', passwordInput)
+                    .single();
+                if (error && error.code !== 'PGRST116') throw error;
+                adminUser = data;
+            } catch (error) {
+                console.error('Admin login query failed:', error);
+                showLoginError('Unable to verify login right now. Please try again.');
+                return;
+            }
+
+            if (adminUser) {
                 saveSession({
-                    name: "Admin",
-                    email: ADMIN_EMAIL,
+                    name: adminUser.name || "Admin",
+                    email: adminUser.email,
                     role: "admin",
                     loggedInAt: new Date().toISOString()
                 });
