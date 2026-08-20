@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Sign In | RJ Ladies Fashion</title>
+
+    <!-- Existing project styles -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+
+<body>
+    <main class="admin-login-page">
+        <header class="admin-login-header">
+            <h1><span>RJ</span> Ladies Fashion</h1>
+            <p>Admin Portal</p>
+        </header>
+
+        <section class="admin-login-card" aria-labelledby="admin-login-title">
+            <form id="login-form" class="auth-form">
+                <div class="modal-header">
+                    <h2 id="admin-login-title">Admin Sign In</h2>
+                    <p>Staff access for the Admin Panel</p>
+                </div>
+
+                <div id="loginError" class="login-error hidden" role="alert">
+                    <span id="loginErrorText">Incorrect username or password.</span>
+                    <button type="button" class="login-error-close" aria-label="Close error">&times;</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="login-email">Email or Username *</label>
+                    <input type="text"
+                           id="login-email"
+                           class="form-control"
+                           placeholder="admin@rjfashion.com"
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password">Password *</label>
+                    <input type="password"
+                           id="login-password"
+                           class="form-control"
+                           required>
+                </div>
+
+                <button type="submit" class="btn primary admin-login-submit">
+                    <i class="fa-solid fa-right-to-bracket"></i> Sign In
+                </button>
+            </form>
+        </section>
+    </main>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #fff8fa;
+            color: #241b20;
+        }
+
+        .admin-login-page {
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px 50px;
+        }
+
+        .admin-login-header {
+            text-align: center;
+            margin-bottom: 28px;
+            background: transparent;
+        }
+
+        .admin-login-header h1 {
+            margin: 0;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: clamp(30px, 4vw, 46px);
+            font-weight: 500;
+            letter-spacing: -0.5px;
+            background: transparent;
+        }
+
+        .admin-login-header h1 span {
+            color: #d75f87;
+        }
+
+        .admin-login-header p {
+            margin: 7px 0 0;
+            color: #9b7281;
+            font-size: 16px;
+            letter-spacing: 0.5px;
+            background: transparent;
+        }
+
+        .admin-login-card {
+            width: min(100%, 470px);
+            padding: 38px 40px 40px;
+            background: #ffffff;
+            border: 1px solid #f0cbd7;
+            border-radius: 24px;
+            box-shadow: 0 18px 45px rgba(190, 91, 124, 0.14);
+        }
+
+        .admin-login-card .modal-header {
+            text-align: center;
+            margin-bottom: 26px;
+        }
+
+        .admin-login-card .modal-header h2 {
+            margin: 0;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 30px;
+            font-weight: 500;
+        }
+
+        .admin-login-card .modal-header p {
+            margin: 8px 0 0;
+            color: #9b7281;
+            font-size: 15px;
+        }
+
+        .admin-login-card .form-group {
+            margin-bottom: 19px;
+        }
+
+        .admin-login-card label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .admin-login-card .form-control {
+            width: 100%;
+            min-height: 58px;
+            padding: 0 18px;
+            border: 1px solid #efcbd7;
+            border-radius: 15px;
+            background: #fff;
+            font: inherit;
+            outline: none;
+        }
+
+        .admin-login-card .form-control:focus {
+            border-color: #d75f87;
+            box-shadow: 0 0 0 3px rgba(215, 95, 135, 0.12);
+        }
+
+        .admin-login-submit {
+            width: 100%;
+            min-height: 56px;
+            margin-top: 8px;
+            border: 0;
+            border-radius: 28px;
+            background: #d75f87;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 22px rgba(215, 95, 135, 0.22);
+        }
+
+        .admin-login-submit:hover {
+            background: #c95178;
+        }
+
+        @media (max-width: 520px) {
+            .admin-login-page {
+                padding: 28px 14px 35px;
+            }
+
+            .admin-login-header {
+                margin-bottom: 22px;
+            }
+
+            .admin-login-card {
+                padding: 30px 22px 32px;
+                border-radius: 20px;
+            }
+        }
+    </style>
+
+    <!-- Existing login logic -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
