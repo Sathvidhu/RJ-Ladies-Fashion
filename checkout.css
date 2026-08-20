@@ -1,0 +1,281 @@
+/* Guest WhatsApp checkout — RJ Ladies Fashion */
+.checkout-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2800;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px 16px;
+    overflow-y: auto;
+    background: rgba(47, 35, 38, 0.55);
+    backdrop-filter: blur(5px);
+}
+
+.checkout-overlay.is-open {
+    display: flex;
+}
+
+.checkout-card {
+    width: min(920px, 100%);
+    margin: auto;
+    position: relative;
+    border-radius: var(--radius-card, 18px);
+    padding: 28px 24px 24px;
+    background: var(--bg-card, #fff);
+    box-shadow: var(--shadow-hover, 0 16px 34px rgba(217, 107, 138, 0.18));
+}
+
+.checkout-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--text-dark, #2f2326);
+    background: var(--bg-section, #fdf1f3);
+}
+
+.checkout-card h2 {
+    margin: 0 0 6px;
+    color: var(--text-dark, #2f2326);
+    font: 700 28px "Playfair Display", serif;
+}
+
+.checkout-lead {
+    margin: 0 0 22px;
+    color: var(--text-muted, #8a7278);
+    font-size: 14px;
+}
+
+.checkout-grid {
+    display: grid;
+    gap: 22px;
+}
+
+@media (min-width: 840px) {
+    .checkout-grid {
+        grid-template-columns: 1.1fr 0.9fr;
+        align-items: start;
+    }
+}
+
+.checkout-section h3 {
+    margin: 0 0 12px;
+    color: var(--text-dark, #2f2326);
+    font: 600 16px "Poppins", sans-serif;
+}
+
+.checkout-fields {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 1fr 1fr;
+}
+
+.checkout-fields .span-2 {
+    grid-column: 1 / -1;
+}
+
+.checkout-error {
+    display: none;
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    color: #7a2f3a;
+    background: #fdecee;
+    font-size: 13px;
+}
+
+.checkout-error.is-visible {
+    display: block;
+}
+
+.checkout-items {
+    display: grid;
+    gap: 12px;
+    max-height: 280px;
+    overflow-y: auto;
+    margin-bottom: 14px;
+}
+
+.checkout-item {
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border, #edd3da);
+}
+
+.checkout-item img {
+    width: 64px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 10px;
+    background: var(--bg-section, #fdf1f3);
+}
+
+.checkout-item strong {
+    display: block;
+    color: var(--text-dark, #2f2326);
+    font-size: 13px;
+}
+
+.checkout-item small {
+    color: var(--text-muted, #8a7278);
+    font-size: 12px;
+}
+
+.checkout-item .line-total {
+    color: var(--primary-dark, #b94f6e);
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.checkout-coupons {
+    display: grid;
+    gap: 8px;
+    margin: 8px 0 12px;
+}
+
+.checkout-coupon {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border, #edd3da);
+    border-radius: 12px;
+    background: var(--bg-main, #fff8f7);
+}
+
+.checkout-coupon.is-applied {
+    border-color: var(--primary, #d96b8a);
+    background: var(--primary-light, #f8d7df);
+}
+
+.checkout-coupon p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-body, #5f4b52);
+}
+
+.checkout-coupon strong {
+    display: block;
+    font-size: 13px;
+    color: var(--text-dark, #2f2326);
+}
+
+.checkout-coupon button,
+.checkout-apply-row button,
+.checkout-submit {
+    border: 0;
+    border-radius: 999px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font: 600 12px "Poppins", sans-serif;
+    color: #fff;
+    background: var(--primary-dark, #b94f6e);
+}
+
+.checkout-coupon button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.checkout-apply-row {
+    display: flex;
+    margin-bottom: 8px;
+}
+
+.checkout-apply-row input {
+    min-width: 0;
+    flex: 1;
+    border: 1px solid var(--border, #edd3da);
+    border-radius: 999px 0 0 999px;
+    padding: 10px 14px;
+    font: inherit;
+}
+
+.checkout-apply-row button {
+    border-radius: 0 999px 999px 0;
+}
+
+.checkout-coupon-note {
+    min-height: 18px;
+    margin: 0 0 12px;
+    font-size: 12px;
+    color: var(--text-muted, #8a7278);
+}
+
+.checkout-coupon-note.success { color: #27724f; }
+.checkout-coupon-note.error { color: var(--primary-dark, #b94f6e); }
+
+.checkout-totals p {
+    display: flex;
+    justify-content: space-between;
+    margin: 7px 0;
+    color: var(--text-muted, #8a7278);
+    font-size: 14px;
+}
+
+.checkout-totals strong {
+    color: var(--text-dark, #2f2326);
+}
+
+.checkout-totals .grand {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border, #edd3da);
+    font-size: 17px;
+    color: var(--text-dark, #2f2326);
+}
+
+.checkout-totals .grand strong {
+    color: var(--primary-dark, #b94f6e);
+}
+
+.checkout-submit {
+    width: 100%;
+    margin-top: 16px;
+    padding: 14px;
+    font-size: 14px;
+    background: var(--whatsapp-green, #25d366);
+}
+
+.checkout-submit:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.checkout-empty {
+    padding: 12px 0;
+    color: var(--text-muted, #8a7278);
+    font-size: 14px;
+}
+
+.checkout-card .form-group { margin-bottom: 0; }
+.checkout-card .form-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-dark, #2f2326);
+    font-size: 13px;
+    font-weight: 600;
+}
+.checkout-card .form-control {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid var(--border, #edd3da);
+    border-radius: 14px;
+    background: #fff;
+    color: var(--text-dark, #2f2326);
+    font: 15px "Poppins", sans-serif;
+    outline: none;
+    box-sizing: border-box;
+}
+.checkout-card .form-control:focus {
+    border-color: var(--primary, #d96b8a);
+    box-shadow: 0 0 0 4px rgba(217, 107, 138, 0.12);
+}

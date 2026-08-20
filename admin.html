@@ -103,6 +103,209 @@
             color: #2d2926;
         }
 
+        .orders-card-header {
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .orders-header-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .orders-search-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            min-width: min(240px, 100%);
+        }
+
+        .orders-search-wrap i {
+            position: absolute;
+            left: 12px;
+            color: #6b635b;
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+        #orders-search-input {
+            width: 240px;
+            max-width: 100%;
+            padding: 7px 14px 7px 32px;
+            font-size: 12px;
+            border-radius: 999px;
+            background: #fff;
+        }
+
+        @media (max-width: 720px) {
+            .orders-header-actions {
+                width: 100%;
+            }
+            .orders-search-wrap,
+            #orders-search-input {
+                flex: 1;
+                width: 100%;
+            }
+        }
+
+        .dashboard-lead {
+            color: #6b635b;
+            font-size: 14px;
+            margin: -8px 0 22px;
+        }
+
+        .dashboard-updated {
+            color: #6b635b;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        .dash-stat {
+            background: #fff7f9;
+            border: 1px solid var(--border, #ead7c0);
+            border-radius: 16px;
+            padding: 16px 18px;
+            min-height: 108px;
+        }
+
+        .dash-stat i {
+            color: var(--primary, #d96b8a);
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .dash-stat span {
+            display: block;
+            color: #6b635b;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .dash-stat strong {
+            display: block;
+            margin-top: 6px;
+            color: var(--text-dark, #2d2926);
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .dashboard-split {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .sales-period-control {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 6px;
+        }
+
+        .sales-period-control button {
+            border: 1px solid var(--border, #ead7c0);
+            background: #fff;
+            color: var(--text-dark, #2d2926);
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .sales-period-control button.is-active,
+        .sales-period-control button:hover {
+            background: var(--primary, #d96b8a);
+            border-color: var(--primary, #d96b8a);
+            color: #fff;
+        }
+
+        .sales-period-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .sales-period-stats article {
+            background: #fff7f9;
+            border: 1px solid var(--border, #ead7c0);
+            border-radius: 14px;
+            padding: 14px 16px;
+        }
+
+        .sales-period-stats span {
+            display: block;
+            color: #6b635b;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .sales-period-stats strong {
+            display: block;
+            margin-top: 6px;
+            color: var(--text-dark, #2d2926);
+            font-size: 20px;
+        }
+
+        .dashboard-chart {
+            width: 100%;
+            min-height: 260px;
+            overflow-x: auto;
+        }
+
+        .dashboard-chart svg {
+            display: block;
+            width: 100%;
+            min-width: 480px;
+            height: 260px;
+        }
+
+        .dashboard-chart-empty {
+            color: #6b635b;
+            font-size: 14px;
+            padding: 36px 8px;
+            text-align: center;
+        }
+
+        .dashboard-empty {
+            color: #6b635b;
+            font-size: 14px;
+            padding: 12px 0;
+        }
+
+        @media (max-width: 900px) {
+            .dashboard-split {
+                grid-template-columns: 1fr;
+            }
+            .sales-period-stats {
+                grid-template-columns: 1fr;
+            }
+            .sales-overview-header {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+            .sales-period-control {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+
         /* Form Styles */
         .form-grid {
             display: grid;
@@ -315,6 +518,65 @@
         .btn-edit { background: var(--accent); } .btn-edit:hover { background: var(--primary); }
         .btn-delete { background: var(--danger); } .btn-delete:hover { background: #a84355; }
 
+        .whatsapp-import-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 2800;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 24px 16px;
+            overflow-y: auto;
+            background: rgba(47, 35, 38, 0.55);
+        }
+        .whatsapp-import-overlay.is-open {
+            display: flex;
+        }
+        .whatsapp-import-card {
+            width: min(720px, 100%);
+            margin: auto;
+            position: relative;
+            border-radius: 18px;
+            padding: 28px 24px 24px;
+            background: #fff;
+            border: 1px solid var(--border, #ead7c0);
+            box-shadow: 0 16px 34px rgba(217, 107, 138, 0.18);
+        }
+        .whatsapp-import-card h2 {
+            font-family: "Cormorant Garamond", "Playfair Display", serif;
+            margin: 0 0 8px;
+            color: var(--text-dark, #2d2926);
+        }
+        .whatsapp-import-card p {
+            color: #6b635b;
+            font-size: 14px;
+            margin: 0 0 16px;
+        }
+        .whatsapp-import-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 18px;
+            color: #6b635b;
+        }
+        #whatsapp-import-text {
+            width: 100%;
+            min-height: 260px;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .whatsapp-import-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -338,7 +600,10 @@
     <div class="container">
         <!-- Navigation Tabs -->
         <div class="admin-nav-tabs">
-            <button class="tab-btn active" data-tab="products-tab">
+            <button class="tab-btn active" data-tab="dashboard-tab">
+                <i class="fa-solid fa-chart-line"></i> Dashboard
+            </button>
+            <button class="tab-btn" data-tab="products-tab">
                 <i class="fa-solid fa-shirt"></i> Product Catalog
             </button>
             <button class="tab-btn" data-tab="orders-tab">
@@ -356,9 +621,71 @@
         </div>
 
         <!-- ========================================== -->
+        <!-- 0. DASHBOARD -->
+        <!-- ========================================== -->
+        <section id="dashboard-tab" class="admin-section active">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>Dashboard</h2>
+                    <span class="dashboard-updated" id="dashboard-updated"></span>
+                </div>
+                <p class="dashboard-lead">A live overview of sales, orders, and catalog health from your existing store data.</p>
+                <div class="dashboard-grid" id="dashboard-stats"></div>
+            </div>
+            <div class="dashboard-split">
+                <div class="admin-card">
+                    <div class="admin-card-header sales-overview-header">
+                        <h2>Sales Overview</h2>
+                        <div class="sales-period-control" id="sales-period-control" role="tablist" aria-label="Sales period">
+                            <button type="button" data-sales-period="today" class="is-active">Today</button>
+                            <button type="button" data-sales-period="week">This Week</button>
+                            <button type="button" data-sales-period="month">This Month</button>
+                            <button type="button" data-sales-period="sixmonths">Last 6 Months</button>
+                            <button type="button" data-sales-period="year">This Year</button>
+                        </div>
+                    </div>
+                    <div class="sales-period-stats">
+                        <article>
+                            <span>Total Sales</span>
+                            <strong id="sales-period-total">₹0</strong>
+                        </article>
+                        <article>
+                            <span>Number of Orders</span>
+                            <strong id="sales-period-count">0</strong>
+                        </article>
+                        <article>
+                            <span>Average Order Value</span>
+                            <strong id="sales-period-average">₹0</strong>
+                        </article>
+                    </div>
+                    <div id="dashboard-chart" class="dashboard-chart"></div>
+                </div>
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <h2>Recent Orders</h2>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-recent-orders"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
         <!-- 1. PRODUCTS MANAGEMENT SECTION -->
         <!-- ========================================== -->
-        <section id="products-tab" class="admin-section active">
+        <section id="products-tab" class="admin-section">
             <!-- Add / Edit Product Form -->
             <div class="admin-card">
                 <div class="admin-card-header">
@@ -507,9 +834,15 @@
         <!-- ========================================== -->
         <section id="orders-tab" class="admin-section">
             <div class="admin-card">
-                <div class="admin-card-header">
+                <div class="admin-card-header orders-card-header">
                     <h2>WhatsApp Customer Orders Controller</h2>
-                    <button id="add-dummy-order-btn" class="btn secondary" style="padding: 6px 16px; font-size: 12px;">+ Add Sample Order</button>
+                    <div class="orders-header-actions">
+                        <label class="orders-search-wrap" for="orders-search-input">
+                            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                            <input id="orders-search-input" class="form-control" type="search" placeholder="Search by Order no / Wp no." autocomplete="off">
+                        </label>
+                        <button id="import-whatsapp-order-btn" class="btn secondary" style="padding: 6px 16px; font-size: 12px;">+ Import WhatsApp Order</button>
+                    </div>
                 </div>
                 <p style="color: #6b635b; margin-bottom: 20px; font-size: 14px;">
                     Track placed orders, change status (Order Confirmed, On The Way, Delivered), and send automatic status update notifications directly to customers on WhatsApp.
@@ -697,6 +1030,22 @@
             </div>
         </section>
 
+    </div>
+
+    <div id="whatsapp-import-overlay" class="whatsapp-import-overlay" hidden>
+        <div class="whatsapp-import-card" role="dialog" aria-modal="true" aria-labelledby="whatsapp-import-title">
+            <button type="button" class="whatsapp-import-close" id="whatsapp-import-close" aria-label="Close import"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="whatsapp-import-title">Import WhatsApp Order</h2>
+            <p>Paste the customer’s WhatsApp order message. We will match it to a pending request before importing.</p>
+            <div class="form-group">
+                <label for="whatsapp-import-text">WhatsApp message</label>
+                <textarea id="whatsapp-import-text" class="form-control" placeholder="Paste the full WhatsApp order message here"></textarea>
+            </div>
+            <div class="whatsapp-import-actions">
+                <button type="button" class="btn secondary" id="whatsapp-import-cancel">Cancel</button>
+                <button type="button" class="btn primary" id="whatsapp-import-review">Review Message</button>
+            </div>
+        </div>
     </div>
 
     <!-- Supabase client and existing project configuration -->

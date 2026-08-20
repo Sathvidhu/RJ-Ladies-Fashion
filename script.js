@@ -42,12 +42,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const authModal = document.getElementById("auth-modal");
     const closeAuthModalBtn = document.getElementById("close-auth-modal-btn");
     const openAuthBtn = document.getElementById("open-auth-btn");
-    const heroAuthBtn = document.getElementById("hero-auth-btn");
-    const tabLogin = document.getElementById("tab-login");
-    const tabRegister = document.getElementById("tab-register");
     const loginForm = document.getElementById("login-form");
-    const registerForm = document.getElementById("register-form");
-    const authErrorMsg = document.getElementById("auth-error-msg");
     const loginEmailInput = document.getElementById("login-email");
     const loginPasswordInput = document.getElementById("login-password");
     const loginError = document.getElementById("loginError");
@@ -112,61 +107,14 @@ document.addEventListener("DOMContentLoaded", function () {
         localStorage.removeItem("rj_user");
     }
 
-    function isLoggedIn() {
-        return Boolean(localStorage.getItem("rj_user"));
-    }
-
-    function guardWhatsAppCheckout(event) {
-        if (isLoggedIn()) return true;
-        event?.preventDefault();
-        const options = {
-            icon: "info",
-            title: "Login required",
-            text: "Please login to continue checkout.",
-            confirmButtonText: "Login"
-        };
-        if (window.Swal) {
-            Swal.fire(options).then(() => {
-                document.getElementById("login-section")?.scrollIntoView({ behavior: "smooth" });
-            });
-        } else {
-            window.alert(options.text);
-        }
-        return false;
-    }
-
-    // Get registered customers list
-    function getRegisteredUsers() {
-        return getStoredData("rj_users", []);
-    }
-
-    function saveRegisteredUsers(users) {
-        saveStoredData("rj_users", users);
-    }
-
     // ==========================================
-    // AUTH UI: RENDER NAVBAR BASED ON SESSION
+    // AUTH UI: ADMIN SESSION ONLY (no customer login)
     // ==========================================
     function renderAuthNavbar() {
+        if (!authNavSlot) return;
         const session = getCurrentSession();
 
-        if (!session) {
-            // Not logged in — show Login/Register button
-            authNavSlot.innerHTML = `
-                <button id="open-auth-btn" class="nav-auth-btn">
-                    <i class="fa-solid fa-user"></i> Login / Register
-                </button>
-            `;
-            // Re-attach open modal listener
-            document.getElementById("open-auth-btn").addEventListener("click", openAuthModal);
-
-            // Update hero button
-            if (heroAuthBtn) {
-                heroAuthBtn.textContent = "Login Account";
-                heroAuthBtn.onclick = openAuthModal;
-            }
-        } else if (session.role === "admin") {
-            // Admin logged in — show Admin Portal link + Logout
+        if (session && session.role === "admin") {
             authNavSlot.innerHTML = `
                 <div class="nav-user-box">
                     <span class="user-badge"><i class="fa-solid fa-shield-halved"></i> Admin</span>
@@ -179,29 +127,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 </div>
             `;
             document.getElementById("logout-btn").addEventListener("click", handleLogout);
-
-            if (heroAuthBtn) {
-                heroAuthBtn.textContent = "Admin Portal";
-                heroAuthBtn.onclick = function () { window.location.href = "admin.html"; };
-            }
         } else {
-            // Customer logged in — show name + Logout
-            authNavSlot.innerHTML = `
-                <div class="nav-user-box">
-                    <span class="user-badge"><i class="fa-solid fa-user-check"></i> ${session.name}</span>
-                    <button id="logout-btn" class="nav-auth-btn" style="font-size: 12px;">
-                        <i class="fa-solid fa-right-from-bracket"></i> Logout
-                    </button>
-                </div>
-            `;
-            document.getElementById("logout-btn").addEventListener("click", handleLogout);
-
-            if (heroAuthBtn) {
-                heroAuthBtn.textContent = `Hi, ${session.name.split(" ")[0]}!`;
-                heroAuthBtn.onclick = function () {
-                    document.getElementById("products-section").scrollIntoView({ behavior: "smooth" });
-                };
-            }
+            authNavSlot.innerHTML = "";
         }
         updateCartVisibility();
     }
@@ -222,41 +149,12 @@ document.addEventListener("DOMContentLoaded", function () {
     // ==========================================
     function openAuthModal() {
         if (authModal) authModal.style.display = "flex";
-        showLoginTab();
+        hideLoginError();
     }
 
     function closeAuthModal() {
         if (authModal) authModal.style.display = "none";
-        hideAuthError();
         hideLoginError();
-    }
-
-    function showLoginTab() {
-        tabLogin.classList.add("active");
-        tabRegister.classList.remove("active");
-        loginForm.style.display = "block";
-        registerForm.style.display = "none";
-        hideAuthError();
-        hideLoginError();
-    }
-
-    function showRegisterTab() {
-        tabRegister.classList.add("active");
-        tabLogin.classList.remove("active");
-        registerForm.style.display = "block";
-        loginForm.style.display = "none";
-        hideAuthError();
-        hideLoginError();
-    }
-
-    function showAuthError(msg) {
-        authErrorMsg.style.display = "block";
-        authErrorMsg.textContent = msg;
-    }
-
-    function hideAuthError() {
-        authErrorMsg.style.display = "none";
-        authErrorMsg.textContent = "";
     }
 
     function showLoginError(message) {
@@ -272,14 +170,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (loginEmailInput) loginEmailInput.addEventListener("input", hideLoginError);
     if (loginPasswordInput) loginPasswordInput.addEventListener("input", hideLoginError);
 
-    // Wire up modal controls
     if (openAuthBtn) openAuthBtn.addEventListener("click", openAuthModal);
-    if (heroAuthBtn) heroAuthBtn.onclick = openAuthModal;
     if (closeAuthModalBtn) closeAuthModalBtn.addEventListener("click", closeAuthModal);
-    if (tabLogin) tabLogin.addEventListener("click", showLoginTab);
-    if (tabRegister) tabRegister.addEventListener("click", showRegisterTab);
 
-    // Close modal on background click
     if (authModal) {
         authModal.addEventListener("click", function (e) {
             if (e.target === authModal) closeAuthModal();
@@ -287,7 +180,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // ==========================================
-    // LOGIN FORM HANDLER
+    // ADMIN LOGIN FORM HANDLER
     // ==========================================
     if (loginForm) {
         loginForm.addEventListener("submit", async function (e) {
@@ -296,7 +189,6 @@ document.addEventListener("DOMContentLoaded", function () {
             const emailInput = loginEmailInput.value.trim().toLowerCase();
             const passwordInput = loginPasswordInput.value;
 
-            // Admin credentials are verified against Supabase; customer login remains unchanged.
             let adminUser = null;
             try {
                 const { data, error } = await window.supabaseClient
@@ -323,94 +215,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 hideLoginError();
                 closeAuthModal();
                 renderAuthNavbar();
-                // Redirect to Admin Portal
                 window.location.href = "admin.html";
                 return;
             }
 
-            // Check Customer Credentials
-            const users = getRegisteredUsers();
-            const matchedUser = users.find(
-                u => u.email.toLowerCase() === emailInput && u.password === passwordInput
-            );
-
-            if (matchedUser) {
-                saveSession({
-                    name: matchedUser.name,
-                    email: matchedUser.email,
-                    role: "customer",
-                    loggedInAt: new Date().toISOString()
-                });
-                hideLoginError();
-                closeAuthModal();
-                renderAuthNavbar();
-                Swal.fire({
-                    icon: "success",
-                    title: `Welcome, ${matchedUser.name}!`,
-                    text: "You have successfully logged in.",
-                    confirmButtonColor: "#8c3d3d"
-                });
-            } else {
-                showLoginError("Incorrect username or password.");
-            }
-        });
-    }
-
-    // ==========================================
-    // REGISTER FORM HANDLER
-    // ==========================================
-    if (registerForm) {
-        registerForm.addEventListener("submit", function (e) {
-            e.preventDefault();
-
-            const name = document.getElementById("reg-name").value.trim();
-            const email = document.getElementById("reg-email").value.trim().toLowerCase();
-            const password = document.getElementById("reg-password").value;
-
-            if (!name || !email || !password) {
-                showAuthError("Please fill in all required fields.");
-                return;
-            }
-
-            if (password.length < 6) {
-                showAuthError("Password must be at least 6 characters.");
-                return;
-            }
-
-            // Check if email already registered
-            const users = getRegisteredUsers();
-            const exists = users.find(u => u.email.toLowerCase() === email);
-
-            if (exists) {
-                showAuthError("This email is already registered. Please log in instead.");
-                return;
-            }
-
-            // Save new user
-            users.push({
-                name: name,
-                email: email,
-                password: password,
-                registeredAt: new Date().toISOString()
-            });
-            saveRegisteredUsers(users);
-
-            // Auto-login after registration
-            saveSession({
-                name: name,
-                email: email,
-                role: "customer",
-                loggedInAt: new Date().toISOString()
-            });
-
-            closeAuthModal();
-            renderAuthNavbar();
-            Swal.fire({
-                icon: "success",
-                title: "Account created",
-                text: `Welcome to RJ Ladies Fashion, ${name}!`,
-                confirmButtonColor: "#8c3d3d"
-            });
+            showLoginError("Incorrect username or password.");
         });
     }
 
@@ -419,10 +228,10 @@ document.addEventListener("DOMContentLoaded", function () {
     // ==========================================
     // STATE VARIABLES
     // ==========================================
-    let allProducts = getStoredData("rj_products", []);
-    let activeCoupons = getStoredData("rj_coupons", []);
+    let allProducts = [];
+    let activeCoupons = [];
     let activeOffers = getStoredData("rj_offers", []);
-    let allOrders = getStoredData("rj_orders", []);
+    let allOrders = [];
     let appliedCoupon = null;
     let cart = getStoredData("rj_cart", []);
     let cartCoupon = null;
@@ -455,15 +264,12 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function getCartTotals() {
-        const subtotal = cart.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.qty) || 0), 0);
-        let discount = 0;
-        if (cartCoupon && subtotal >= Number(cartCoupon.minSpend || 0)) {
-            discount = String(cartCoupon.discountType || cartCoupon.type || "").toLowerCase() === "fixed"
-                ? Number(cartCoupon.discount || 0)
-                : subtotal * (Number(cartCoupon.discount || 0) / 100);
-            discount = Math.min(discount, subtotal);
+        if (window.RJCheckout) {
+            const totals = window.RJCheckout.calculateTotals(cart, cartCoupon);
+            return { subtotal: totals.subtotal, discount: totals.discount, total: totals.total };
         }
-        return { subtotal, discount: Math.round(discount), total: Math.max(0, Math.round(subtotal - discount)) };
+        const subtotal = cart.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.qty) || 0), 0);
+        return { subtotal, discount: 0, total: subtotal };
     }
 
     function renderCart() {
@@ -488,16 +294,33 @@ document.addEventListener("DOMContentLoaded", function () {
         const image = card.dataset.selectedImage || getPrimaryImage(product) || "";
         const existing = cart.find(item => String(item.productId) === String(product.id) && item.color === color && item.size === size);
         if (existing) existing.qty += 1;
-        else cart.push({ productId: product.id, name: product.name, price: Number(product.price), image, color, size, qty: 1 });
+        else cart.push({ productId: product.id, name: product.name, price: Number(product.price), image, color, size, variant: color, qty: 1 });
         saveCart(); openCart();
     }
 
     function updateCartVisibility() {
-        const loggedIn = isLoggedIn();
-        if (headerCart) headerCart.style.display = loggedIn ? "flex" : "none";
-        if (cartToggleBtn) cartToggleBtn.hidden = !loggedIn;
-        document.querySelectorAll(".btn-cart").forEach(button => { button.hidden = !loggedIn; });
-        if (!loggedIn) closeCart();
+        if (headerCart) headerCart.style.display = "flex";
+        if (cartToggleBtn) cartToggleBtn.hidden = false;
+        document.querySelectorAll(".btn-cart").forEach(button => { button.hidden = false; });
+    }
+
+    function openStoreCheckout() {
+        if (!cart.length) return;
+        closeCart();
+        window.RJCheckout.open({
+            items: cart,
+            coupons: activeCoupons,
+            appliedCoupon: cartCoupon,
+            onAppliedCoupon: (coupon) => {
+                cartCoupon = coupon;
+                if (cartCouponInput) cartCouponInput.value = coupon?.code || "";
+                if (cartCouponMessage) {
+                    cartCouponMessage.textContent = coupon ? `${coupon.code} applied.` : "";
+                    cartCouponMessage.className = coupon ? "cart-coupon-message success" : "cart-coupon-message";
+                }
+                renderCart();
+            }
+        });
     }
 
     cartToggleBtn?.addEventListener("click", openCart);
@@ -510,21 +333,33 @@ document.addEventListener("DOMContentLoaded", function () {
         if (quantity) { const item = cart[Number(quantity.dataset.cartQty)]; if (!item) return; item.qty += Number(quantity.dataset.change); if (item.qty < 1) cart.splice(Number(quantity.dataset.cartQty), 1); saveCart(); }
     });
     cartApplyCouponBtn?.addEventListener("click", () => {
-        const code = String(cartCouponInput?.value || "").trim().toLowerCase();
-        const coupon = getStoredData("rj_coupons", []).find(item => String(item.code || "").trim().toLowerCase() === code && item.active && (!item.expiryDate && !item.expiry || new Date(`${item.expiryDate || item.expiry}T23:59:59`) >= new Date()));
-        if (!coupon) { cartCoupon = null; cartCouponMessage.textContent = "Enter a valid active coupon that has not expired."; cartCouponMessage.className = "cart-coupon-message error"; renderCart(); return; }
-        if (getCartTotals().subtotal < Number(coupon.minSpend || 0)) { cartCoupon = null; cartCouponMessage.textContent = `This coupon requires a minimum order of ₹${coupon.minSpend}.`; cartCouponMessage.className = "cart-coupon-message error"; renderCart(); return; }
-        cartCoupon = coupon; cartCouponMessage.textContent = `${coupon.code} applied.`; cartCouponMessage.className = "cart-coupon-message success"; renderCart();
+        const code = String(cartCouponInput?.value || "").trim();
+        const coupon = activeCoupons.find((item) => String(item.code || "").trim().toLowerCase() === code.toLowerCase());
+        const mapped = window.RJCheckout ? window.RJCheckout.mapCoupon(coupon) : coupon;
+        const valid = window.RJCheckout ? window.RJCheckout.isCouponValid(mapped) : Boolean(mapped);
+        if (!valid) {
+            cartCoupon = null;
+            cartCouponMessage.textContent = "Enter a valid active coupon that has not expired.";
+            cartCouponMessage.className = "cart-coupon-message error";
+            renderCart();
+            return;
+        }
+        if (getCartTotals().subtotal < Number(mapped.minSpend || 0)) {
+            cartCoupon = null;
+            cartCouponMessage.textContent = `This coupon requires a minimum order of ₹${mapped.minSpend}.`;
+            cartCouponMessage.className = "cart-coupon-message error";
+            renderCart();
+            return;
+        }
+        cartCoupon = mapped;
+        cartCouponMessage.textContent = `${mapped.code} applied.`;
+        cartCouponMessage.className = "cart-coupon-message success";
+        renderCart();
     });
+
     cartCheckoutBtn?.addEventListener("click", () => {
-        if (!guardWhatsAppCheckout()) return;
         if (!cart.length) return;
-        const session = getCurrentSession(); const totals = getCartTotals(); const orderRef = `RJ-${Math.floor(1000 + Math.random() * 9000)}`;
-        const lines = cart.map(item => `• ${item.name} — ${item.color}, ${item.size} × ${item.qty}: ₹${Number(item.price) * item.qty}`).join("\n");
-        const couponLine = cartCoupon ? `\nCoupon: ${cartCoupon.code}\nDiscount: ₹${totals.discount}` : "";
-        const message = `Hi RJ Ladies Fashion! I would like to place an order.\n\nOrder Ref: ${orderRef}\nCustomer: ${session?.name || "Guest Customer"}\n\nItems:\n${lines}\n\nSubtotal: ₹${totals.subtotal}${couponLine}\nFinal Total: ₹${totals.total}\n\nPlease confirm my order and share delivery details!`;
-        allOrders = getStoredData("rj_orders", []); allOrders.unshift({ id: orderRef, customerName: session?.name || "Guest Customer", phone: "", product: cart.map(item => item.name).join(", "), size: "Cart order", amount: totals.total, status: "Order Confirmed", date: new Date().toISOString().split("T")[0] }); saveStoredData("rj_orders", allOrders);
-        window.open(`https://wa.me/919567308831?text=${encodeURIComponent(message)}`, "_blank");
+        openStoreCheckout();
     });
 
     // Mobile Navbar Navigation Toggle
@@ -538,49 +373,132 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // ==========================================
-    // 1. LOAD PRODUCTS
+    // 1. LOAD PRODUCTS & COUPONS (SUPABASE)
     // ==========================================
+    function mapSupabaseProduct(rawProduct) {
+        const categoryName = rawProduct.categories?.name || 'Uncategorized';
+        const categorySlug = rawProduct.categories?.slug || categoryName.toLowerCase();
+
+        const rawProductImages = Array.isArray(rawProduct.product_images) ? rawProduct.product_images : [];
+        const sortedProdImages = [...rawProductImages].sort((a, b) =>
+            Number(b.is_primary || 0) - Number(a.is_primary || 0) || Number(a.sort_order || 0) - Number(b.sort_order || 0)
+        );
+        const primaryImgUrl = sortedProdImages[0]?.image_url || '';
+
+        const rawVariants = Array.isArray(rawProduct.product_variants)
+            ? rawProduct.product_variants.filter(v => v.is_active !== false)
+            : [];
+
+        const mappedVariants = rawVariants.map((v, index) => {
+            const varImages = Array.isArray(v.product_images) ? v.product_images : [];
+            const sortedVarImages = [...varImages].sort((a, b) =>
+                Number(b.is_primary || 0) - Number(a.is_primary || 0) || Number(a.sort_order || 0) - Number(b.sort_order || 0)
+            );
+            const varImgUrl = sortedVarImages[0]?.image_url || primaryImgUrl;
+
+            return {
+                id: v.id,
+                label: v.color || `Variant ${index + 1}`,
+                name: v.color || `Variant ${index + 1}`,
+                color: v.color || `Variant ${index + 1}`,
+                size: v.size || 'Standard',
+                sku: v.sku || '',
+                price: Number(v.price ?? rawProduct.compare_price ?? 0),
+                stock: Number(v.stock ?? 0),
+                image: varImgUrl,
+                images: [varImgUrl]
+            };
+        });
+
+        const sizes = [...new Set(mappedVariants.map(v => v.size).filter(Boolean))];
+        const finalSizes = sizes.length ? sizes : ['Standard'];
+        const mainImage = primaryImgUrl || mappedVariants[0]?.image || '';
+
+        return {
+            id: String(rawProduct.id),
+            name: rawProduct.name || 'Untitled Product',
+            slug: rawProduct.slug || '',
+            description: rawProduct.description || '',
+            category: categorySlug,
+            category_id: rawProduct.category_id,
+            price: Number(rawProduct.compare_price ?? mappedVariants[0]?.price ?? 0),
+            size: finalSizes,
+            image: mainImage,
+            variants: mappedVariants.length ? mappedVariants : [{
+                id: 'default',
+                label: 'Default',
+                name: 'Default',
+                color: 'Default',
+                size: finalSizes[0],
+                price: Number(rawProduct.compare_price ?? 0),
+                image: mainImage,
+                images: [mainImage]
+            }]
+        };
+    }
+
     async function loadProducts() {
         if (loader) loader.style.display = "flex";
 
-        // Always fetch latest products from Flask API
         try {
-            const response = await fetch(`${API_BASE}/api/products`);
-
-            if (response.ok) {
-                allProducts = await response.json();
-            } else {
-                console.warn("API failed, using fallback catalog.");
-                allProducts = getFallbackCatalog();
+            if (!window.supabaseClient) {
+                throw new Error("Supabase client is not available.");
             }
+            const { data, error } = await window.supabaseClient
+                .from('products')
+                .select('*, categories(id, name, slug), product_images(*), product_variants(*, product_images(*))')
+                .eq('is_active', true)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            allProducts = (data || []).map(mapSupabaseProduct);
         } catch (err) {
-            console.warn("fetch() failed, using fallback catalog.");
-            allProducts = getFallbackCatalog();
+            console.error("Failed to load products from Supabase:", err);
+            allProducts = [];
         }
 
         if (loader) loader.style.display = "none";
-        renderAnnouncementBar();
         loadSeasonalHighlight();
         renderProducts(allProducts);
     }
 
-    function getFallbackCatalog() {
-        return [
-            { "id": 1001, "name": "Cream Floral Top", "price": 799, "category": "tops", "size": ["S", "M", "L"], "image": "images/tops/top-01.jpg" },
-            { "id": 1002, "name": "Terracotta Top", "price": 899, "category": "tops", "size": ["S", "M", "L"], "image": "images/tops/top-02.jpg" },
-            { "id": 1003, "name": "Embroidered Top", "price": 999, "category": "tops", "size": ["S", "M", "L"], "image": "images/tops/top-03.jpg" },
-            { "id": 1004, "name": "Minimal Linen Top", "price": 749, "category": "tops", "size": ["S", "M", "L"], "image": "images/tops/top-04.jpg" },
-            { "id": 1005, "name": "Floral Kurti", "price": 1299, "category": "kurtis", "size": ["S", "M", "L", "XL"], "image": "images/kurtis/kurti-01.jpg" },
-            { "id": 1006, "name": "Cotton Kurti", "price": 1499, "category": "kurtis", "size": ["S", "M", "L", "XL"], "image": "images/kurtis/kurti-02.jpg" },
-            { "id": 1007, "name": "Traditional Terracotta Kurti", "price": 1399, "category": "kurtis", "size": ["S", "M", "L", "XL"], "image": "images/kurtis/kurti-03.jpg" },
-            { "id": 1008, "name": "Modern Minimalist Kurti", "price": 1199, "category": "kurtis", "size": ["S", "M", "L", "XL"], "image": "images/kurtis/kurti-04.jpg" },
-            { "id": 1009, "name": "Premium Silk Saree", "price": 2499, "category": "sarees", "size": ["Free Size"], "image": "images/sarees/saree-01.jpg" },
-            { "id": 1010, "name": "Printed Saree", "price": 1899, "category": "sarees", "size": ["Free Size"], "image": "images/sarees/saree-02.jpg" },
-            { "id": 1011, "name": "Elegant Cotton Saree", "price": 1699, "category": "sarees", "size": ["Free Size"], "image": "images/sarees/saree-03.jpg" },
-            { "id": 1012, "name": "Premium Party-Wear Saree", "price": 2999, "category": "sarees", "size": ["Free Size"], "image": "images/sarees/saree-04.jpg" },
-            { "id": 1013, "name": "Premium Handbag", "price": 1599, "category": "accessories", "size": ["Standard"], "image": "images/accessories/accessory-01.jpg" },
-            { "id": 1014, "name": "Elegant Jewellery Collection", "price": 1999, "category": "accessories", "size": ["Standard"], "image": "images/accessories/accessory-02.jpg" }
-        ];
+    function mapSupabaseCoupon(c) {
+        return {
+            id: c.id,
+            code: c.code,
+            active: Boolean(c.is_active),
+            is_active: Boolean(c.is_active),
+            type: c.discount_type,
+            discountType: c.discount_type,
+            discount: Number(c.discount_value || 0),
+            discount_value: Number(c.discount_value || 0),
+            minSpend: Number(c.minimum_order_amount || 0),
+            minimum_order_amount: Number(c.minimum_order_amount || 0),
+            maxDiscount: c.maximum_discount_amount == null ? null : Number(c.maximum_discount_amount),
+            expiry: c.expires_at,
+            expires_at: c.expires_at,
+            description: c.description
+        };
+    }
+
+    async function loadCoupons() {
+        try {
+            if (!window.supabaseClient) {
+                throw new Error("Supabase client is not available.");
+            }
+            const { data, error } = await window.supabaseClient
+                .from('coupons')
+                .select('*')
+                .eq('is_active', true)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            activeCoupons = (data || []).map(mapSupabaseCoupon);
+        } catch (err) {
+            console.error("Failed to load coupons from Supabase:", err);
+            activeCoupons = [];
+        }
+        renderAnnouncementBar();
     }
 
     // ==========================================
@@ -612,7 +530,6 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!announcementText || !announcementBar) return;
         clearInterval(announcementRotationTimer);
         clearTimeout(announcementTransitionTimer);
-        activeCoupons = getStoredData("rj_coupons", []);
         announcementCoupons = activeCoupons.filter((coupon) => coupon && coupon.active && coupon.code);
         announcementIndex = 0;
 
@@ -631,10 +548,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }, 5500);
         }
     }
-
-    window.addEventListener("storage", (event) => {
-        if (event.key === "rj_coupons") renderAnnouncementBar();
-    });
     // ==========================================
     // PRODUCT IMAGE HELPER (supports variants)
     // ==========================================
@@ -874,7 +787,6 @@ document.addEventListener("DOMContentLoaded", function () {
             const whatsappBtn = card.querySelector(".whatsapp-order-btn");
             whatsappBtn.addEventListener("click", function (e) {
                 e.preventDefault();
-                if (!guardWhatsAppCheckout(e)) return;
                 addToCart(product, card);
             });
 
@@ -904,7 +816,6 @@ document.addEventListener("DOMContentLoaded", function () {
             const codeInput = globalCouponInput.value.trim().toUpperCase();
             if (!codeInput) return;
 
-            activeCoupons = getStoredData("rj_coupons", []);
             const foundCoupon = activeCoupons.find(c => c.code.toUpperCase() === codeInput && c.active);
 
             if (foundCoupon) {
@@ -916,7 +827,7 @@ document.addEventListener("DOMContentLoaded", function () {
             } else {
                 appliedCoupon = null;
                 couponMessage.style.color = "#8c3d3d";
-                couponMessage.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Invalid or inactive coupon code. Try <strong>RJ799</strong>.`;
+                couponMessage.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Invalid or inactive coupon code.`;
                 removeCouponBtn.style.display = "none";
             }
         });
@@ -930,45 +841,6 @@ document.addEventListener("DOMContentLoaded", function () {
             removeCouponBtn.style.display = "none";
             renderProducts(allProducts);
         });
-    }
-
-    // ==========================================
-    // 5. WHATSAPP CHECKOUT + ORDER SAVE
-    // ==========================================
-    function processWhatsAppCheckout(product, selectedSize, basePrice, finalPayable, categoryDiscountPct) {
-        const session = getCurrentSession();
-        const customerName = session ? session.name : "Guest Customer";
-
-        const orderRef = "RJ-" + Math.floor(1000 + Math.random() * 9000);
-
-        let couponNote = "";
-        if (appliedCoupon && basePrice >= appliedCoupon.minSpend) {
-            couponNote = `\n🎟️ *Applied Coupon:* ${appliedCoupon.code} (${appliedCoupon.discount}% OFF)`;
-        } else if (categoryDiscountPct > 0) {
-            couponNote = `\n🔥 *Category Offer:* ${categoryDiscountPct}% OFF Applied`;
-        }
-
-        const messageText = `Hi RJ Ladies Fashion! I would like to place an order:\n\n📦 *Order Ref:* ${orderRef}\n👤 *Customer:* ${customerName}\n🛍️ *Product:* ${product.name}\n📏 *Size:* ${selectedSize}\n🏷️ *Original Price:* ₹${basePrice}${couponNote}\n💰 *Final Payable Amount:* ₹${finalPayable}\n\nPlease confirm my order and share delivery details!`;
-
-        const newOrder = {
-            id: orderRef,
-            customerName: customerName,
-            phone: "",
-            product: product.name,
-            size: selectedSize,
-            amount: finalPayable,
-            status: "Order Confirmed",
-            date: new Date().toISOString().split('T')[0]
-        };
-
-        allOrders = getStoredData("rj_orders", []);
-        allOrders.unshift(newOrder);
-        saveStoredData("rj_orders", allOrders);
-
-        const shopNumber = "919567308831";
-        const whatsappUrl =
-            `https://wa.me/${shopNumber}?text=${encodeURIComponent(messageText)}`;
-        window.open(whatsappUrl, "_blank");
     }
 
     // ==========================================
@@ -1002,32 +874,67 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     if (searchOrderBtn) {
-        searchOrderBtn.addEventListener("click", function () {
+        searchOrderBtn.addEventListener("click", async function () {
             const queryId = trackIdInput.value.trim().toUpperCase();
             if (!queryId) return;
 
-            allOrders = getStoredData("rj_orders", []);
-            const found = allOrders.find(o => o.id.toUpperCase() === queryId);
-
             trackResultBox.style.display = "block";
-            if (found) {
-                let statusColor = "#856404"; let statusBg = "#fff3cd";
-                if (found.status === "Order Confirmed") { statusColor = "#155724"; statusBg = "#d4edda"; }
-                if (found.status === "On The Way") { statusColor = "#004085"; statusBg = "#cce5ff"; }
-                if (found.status === "Delivered") { statusColor = "#0c5460"; statusBg = "#d1ecf1"; }
+            trackResultBox.innerHTML = '<p style="color:#666;"><i class="fa-solid fa-spinner fa-spin"></i> Searching order...</p>';
 
-                trackResultBox.innerHTML = `
-                    <p><strong>Order ID:</strong> ${found.id}</p>
-                    <p><strong>Customer:</strong> ${found.customerName}</p>
-                    <p><strong>Product:</strong> ${found.product} (${found.size})</p>
-                    <p><strong>Amount:</strong> ₹${found.amount}</p>
-                    <p><strong>Date:</strong> ${found.date}</p>
-                    <p style="margin-top:10px;"><strong>Current Status:</strong>
-                        <span style="background:${statusBg}; color:${statusColor}; padding:4px 14px; border-radius:12px; font-weight:700; font-size:13px;">${found.status}</span>
-                    </p>
-                `;
-            } else {
-                trackResultBox.innerHTML = `<p style="color:#8c3d3d;"><i class="fa-solid fa-circle-exclamation"></i> No order found for ID <strong>${queryId}</strong>. Try sample ID <strong>RJ-8091</strong>.</p>`;
+            try {
+                if (!window.supabaseClient) throw new Error("Supabase client not available.");
+                const { data, error } = await window.supabaseClient
+                    .from('orders')
+                    .select('*')
+                    .eq('order_number', queryId)
+                    .maybeSingle();
+
+                if (error) throw error;
+
+                if (data) {
+                    const rawStatus = String(data.status || "pending").toLowerCase();
+                    let displayStatus = "Pending";
+                    let statusColor = "#856404"; let statusBg = "#fff3cd";
+
+                    if (rawStatus === "confirmed" || rawStatus === "order confirmed") {
+                        displayStatus = "Order Confirmed"; statusColor = "#155724"; statusBg = "#d4edda";
+                    } else if (rawStatus === "shipped" || rawStatus === "on the way") {
+                        displayStatus = "On The Way"; statusColor = "#004085"; statusBg = "#cce5ff";
+                    } else if (rawStatus === "delivered") {
+                        displayStatus = "Delivered"; statusColor = "#0c5460"; statusBg = "#d1ecf1";
+                    } else if (rawStatus === "cancelled") {
+                        displayStatus = "Cancelled"; statusColor = "#721c24"; statusBg = "#f8d7da";
+                    }
+
+                    const snapshotItems = data.order_snapshot && Array.isArray(data.order_snapshot.items)
+                        ? data.order_snapshot.items
+                        : null;
+                    const itemsText = snapshotItems
+                        ? snapshotItems.map((item) => {
+                            const name = escapeHtml(item.name || '');
+                            const color = escapeHtml(item.color || '');
+                            const size = escapeHtml(item.size || '');
+                            const qty = escapeHtml(item.qty ?? '');
+                            return `${name} (${color}, ${size}) × ${qty}`;
+                        }).join(', ')
+                        : 'Order details unavailable';
+                    const formattedDate = data.placed_at ? new Date(data.placed_at).toLocaleDateString() : (data.created_at ? new Date(data.created_at).toLocaleDateString() : 'N/A');
+
+                    trackResultBox.innerHTML = `
+                        <p><strong>Order ID:</strong> ${escapeHtml(data.order_number)}</p>
+                        <p><strong>Product:</strong> ${itemsText}</p>
+                        <p><strong>Amount:</strong> ₹${escapeHtml(data.total_amount)}</p>
+                        <p><strong>Date:</strong> ${formattedDate}</p>
+                        <p style="margin-top:10px;"><strong>Current Status:</strong>
+                            <span style="background:${statusBg}; color:${statusColor}; padding:4px 14px; border-radius:12px; font-weight:700; font-size:13px;">${escapeHtml(displayStatus)}</span>
+                        </p>
+                    `;
+                } else {
+                    trackResultBox.innerHTML = `<p style="color:#8c3d3d;"><i class="fa-solid fa-circle-exclamation"></i> No order found for ID <strong>${escapeHtml(queryId)}</strong>.</p>`;
+                }
+            } catch (err) {
+                console.error("Failed to search order in Supabase:", err);
+                trackResultBox.innerHTML = `<p style="color:#8c3d3d;"><i class="fa-solid fa-circle-exclamation"></i> Could not check order status right now.</p>`;
             }
         });
     }
@@ -1035,7 +942,11 @@ document.addEventListener("DOMContentLoaded", function () {
     // ==========================================
     // INITIALIZE
     // ==========================================
-    renderAuthNavbar();
-    renderCart();
-    loadProducts();
+    async function initApp() {
+        renderAuthNavbar();
+        renderCart();
+        await loadCoupons();
+        await loadProducts();
+    }
+    initApp();
 });

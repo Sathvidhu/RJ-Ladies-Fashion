@@ -1,5 +1,4 @@
 const API_BASE = 'http://127.0.0.1:5000';
-const WHATSAPP_NUMBER = '919567308831';
 
 document.addEventListener('DOMContentLoaded', () => {
   const page = document.getElementById('product-page');
@@ -7,20 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const mobilePrice = document.getElementById('mobile-price');
   const mobileWhatsAppButton = document.getElementById('mobile-whatsapp-button');
   const productId = new URLSearchParams(window.location.search).get('id');
-
-  const isLoggedIn = () => Boolean(localStorage.getItem('rj_user'));
-  const guardWhatsAppCheckout = (event) => {
-    if (isLoggedIn()) return true;
-    event?.preventDefault();
-    const message = 'Please login to continue checkout.';
-    if (window.Swal) {
-      Swal.fire({ icon: 'info', title: 'Login required', text: message, confirmButtonText: 'Login' })
-        .then(() => document.getElementById('login-section')?.scrollIntoView({ behavior: 'smooth' }));
-    } else {
-      window.alert(message);
-    }
-    return false;
-  };
 
   const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
   const primaryImage = (product) => product.variants?.[0]?.image || product.variants?.[0]?.images?.[0] || product.image || '';
@@ -32,14 +17,85 @@ document.addEventListener('DOMContentLoaded', () => {
     return variants.length ? variants : [{ label: 'Default', image: primaryImage(product) }];
   };
 
+  const mapSupabaseProduct = (rawProduct) => {
+    const categoryName = rawProduct.categories?.name || 'Uncategorized';
+    const categorySlug = rawProduct.categories?.slug || categoryName.toLowerCase();
+
+    const rawProductImages = Array.isArray(rawProduct.product_images) ? rawProduct.product_images : [];
+    const sortedProdImages = [...rawProductImages].sort((a, b) =>
+      Number(b.is_primary || 0) - Number(a.is_primary || 0) || Number(a.sort_order || 0) - Number(b.sort_order || 0)
+    );
+    const primaryImgUrl = sortedProdImages[0]?.image_url || '';
+
+    const rawVariants = Array.isArray(rawProduct.product_variants)
+      ? rawProduct.product_variants.filter((v) => v.is_active !== false)
+      : [];
+
+    const mappedVariants = rawVariants.map((v, index) => {
+      const varImages = Array.isArray(v.product_images) ? v.product_images : [];
+      const sortedVarImages = [...varImages].sort((a, b) =>
+        Number(b.is_primary || 0) - Number(a.is_primary || 0) || Number(a.sort_order || 0) - Number(b.sort_order || 0)
+      );
+      const varImgUrl = sortedVarImages[0]?.image_url || primaryImgUrl;
+
+      return {
+        id: v.id,
+        label: v.color || `Variant ${index + 1}`,
+        name: v.color || `Variant ${index + 1}`,
+        color: v.color || `Variant ${index + 1}`,
+        size: v.size || 'Standard',
+        sku: v.sku || '',
+        price: Number(v.price ?? rawProduct.compare_price ?? 0),
+        stock: Number(v.stock ?? 0),
+        image: varImgUrl,
+        images: [varImgUrl]
+      };
+    });
+
+    const sizes = [...new Set(mappedVariants.map((v) => v.size).filter(Boolean))];
+    const finalSizes = sizes.length ? sizes : ['Standard'];
+    const mainImage = primaryImgUrl || mappedVariants[0]?.image || '';
+
+    return {
+      id: String(rawProduct.id),
+      name: rawProduct.name || 'Untitled Product',
+      slug: rawProduct.slug || '',
+      description: rawProduct.description || '',
+      category: categorySlug,
+      category_id: rawProduct.category_id,
+      price: Number(rawProduct.compare_price ?? mappedVariants[0]?.price ?? 0),
+      size: finalSizes,
+      image: mainImage,
+      variants: mappedVariants.length ? mappedVariants : [{
+        id: 'default',
+        label: 'Default',
+        name: 'Default',
+        color: 'Default',
+        size: finalSizes[0],
+        price: Number(rawProduct.compare_price ?? 0),
+        image: mainImage,
+        images: [mainImage]
+      }]
+    };
+  };
+
   if (!productId) return renderNotFound();
   loadProduct();
 
   async function loadProduct() {
     try {
-      const response = await fetch(`${API_BASE}/api/products`);
-      if (!response.ok) throw new Error('The collection could not be loaded.');
-      const products = await response.json();
+      if (!window.supabaseClient) {
+        throw new Error('Supabase client is not available.');
+      }
+      const { data, error } = await window.supabaseClient
+        .from('products')
+        .select('*, categories(id, name, slug), product_images(*), product_variants(*, product_images(*))')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const products = (data || []).map(mapSupabaseProduct);
       const product = products.find((item) => String(item.id) === String(productId));
       if (!product) return renderNotFound();
       renderProduct(product, products);
@@ -132,10 +188,30 @@ document.addEventListener('DOMContentLoaded', () => {
       sizeOptions.appendChild(button);
     });
 
-    const order = (event) => {
-      if (!guardWhatsAppCheckout(event)) return;
-      const message = `Hello, I want to order:\nProduct: ${product.name}\nVariant: ${selectedVariant.label}\nSize: ${selectedSize}\nPrice: ₹${product.price}`;
-      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+    const order = async () => {
+      const cart = window.RJCheckout.mergeItemIntoCart({
+        productId: product.id,
+        name: product.name,
+        price: Number(product.price) || 0,
+        image: selectedVariant.image || product.image || '',
+        color: selectedVariant.label || selectedVariant.color || 'Default',
+        size: selectedSize,
+        variant: selectedVariant.label || selectedVariant.color || 'Default',
+        variantId: selectedVariant.id || null,
+        qty: 1
+      });
+
+      let coupons = [];
+      try {
+        coupons = await window.RJCheckout.loadCoupons();
+      } catch (error) {
+        console.error('Failed to load coupons:', error);
+      }
+
+      window.RJCheckout.open({
+        items: cart,
+        coupons
+      });
     };
     document.getElementById('whatsapp-button').addEventListener('click', order);
     mobilePrice.textContent = `₹${product.price}`;

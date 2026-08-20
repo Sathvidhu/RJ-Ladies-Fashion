@@ -17,6 +17,7 @@
     <!-- FontAwesome icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="checkout.css">
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -55,13 +56,6 @@
                         <i class="fa-solid fa-bag-shopping"></i><span>Cart</span><b id="cart-count" class="cart-count">0</b>
                     </button>
                 </li>
-                
-                <!-- Auth & Admin Navigation Slot -->
-                <li id="auth-nav-slot">
-                    <button id="open-auth-btn" class="nav-auth-btn">
-                        <i class="fa-solid fa-user"></i> Login / Register
-                    </button>
-                </li>
             </ul>
         </nav>
     </header>
@@ -75,7 +69,6 @@
             <p>Discover hand-crafted sarees, kurtis, tops and accessories designed for supreme grace and comfort.</p>
             <div class="buttons">
                 <a href="#products-section" class="btn primary">Explore Collection</a>
-                <button id="hero-auth-btn" class="btn secondary">Login Account</button>
             </div>
         </div>
     </section>
@@ -86,14 +79,8 @@
             <h2>Your Bag</h2><button id="cart-close-btn" class="cart-close-btn" aria-label="Close cart"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div id="cart-items" class="cart-items"></div>
-        <div class="cart-coupon">
-            <label for="cart-coupon-input">Coupon code</label>
-            <div><input id="cart-coupon-input" type="text" placeholder="Enter coupon code"><button id="cart-apply-coupon-btn" type="button">Apply</button></div>
-            <p id="cart-coupon-message" class="cart-coupon-message"></p>
-        </div>
         <div class="cart-totals">
             <p><span>Subtotal</span><strong id="cart-subtotal">₹0</strong></p>
-            <p id="cart-discount-row" hidden><span>Discount</span><strong id="cart-discount">-₹0</strong></p>
             <p class="cart-total"><span>Total</span><strong id="cart-total">₹0</strong></p>
         </div>
         <button id="cart-checkout-btn" class="cart-checkout-btn" type="button"><i class="fa-brands fa-whatsapp"></i> Checkout on WhatsApp</button>
@@ -208,21 +195,14 @@
     </div>
 
     
-    <!-- Unified Auth Modal (Client & Admin Login / Register) -->
+    <!-- Admin login only — not shown to customers unless opened from footer -->
     <div id="auth-modal" class="modal-overlay" style="display: none;">
         <div class="modal-card auth-modal-card">
             <button id="close-auth-modal-btn" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
-            
-            <div class="auth-tabs">
-                <button id="tab-login" class="auth-tab-btn active">Sign In</button>
-                <button id="tab-register" class="auth-tab-btn">Register</button>
-            </div>
-
-            <!-- Login Form (Customer or Admin) -->
             <form id="login-form" class="auth-form">
                 <div class="modal-header" style="text-align: center; margin-bottom: 20px;">
-                    <h3>Welcome Back</h3>
-                    <p>Log in as Customer or Admin</p>
+                    <h3>Admin Sign In</h3>
+                    <p>Staff access for the Admin Panel</p>
                 </div>
                 <div id="loginError" class="login-error hidden" role="alert">
                     <span id="loginErrorText">Incorrect username or password.</span>
@@ -230,41 +210,14 @@
                 </div>
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label for="login-email">Email or Username *</label>
-                    <input type="text" id="login-email" class="form-control" placeholder="admin@rjfashion.com or your email" required>
+                    <input type="text" id="login-email" class="form-control" placeholder="admin@rjfashion.com" required>
                 </div>
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label for="login-password">Password *</label>
-                    <input type="password" id="login-password" class="form-control" placeholder="Enter password (admin123)" required>
+                    <input type="password" id="login-password" class="form-control" required>
                 </div>
-                <div class="admin-hint-box">
-                    <i class="fa-solid fa-shield-halved"></i> Admin credentials: <code>admin@rjfashion.com</code> / <code>admin123</code>
-                </div>
-                <div id="auth-error-msg" class="auth-error" style="display: none;"></div>
                 <button type="submit" class="btn primary" style="width: 100%; margin-top: 15px;">
                     <i class="fa-solid fa-right-to-bracket"></i> Sign In
-                </button>
-            </form>
-
-            <!-- Register Form (Customer) -->
-            <form id="register-form" class="auth-form" style="display: none;">
-                <div class="modal-header" style="text-align: center; margin-bottom: 20px;">
-                    <h3>Create Account</h3>
-                    <p>Join RJ Ladies Fashion for special boutique offers</p>
-                </div>
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label for="reg-name">Full Name *</label>
-                    <input type="text" id="reg-name" class="form-control" placeholder="e.g. Priya Sharma" required>
-                </div>
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label for="reg-email">Email Address *</label>
-                    <input type="email" id="reg-email" class="form-control" placeholder="name@example.com" required>
-                </div>
-                <div class="form-group" style="margin-bottom: 20px;">
-                    <label for="reg-password">Create Password *</label>
-                    <input type="password" id="reg-password" class="form-control" placeholder="Minimum 6 characters" required minlength="6">
-                </div>
-                <button type="submit" class="btn primary" style="width: 100%;">
-                    <i class="fa-solid fa-user-plus"></i> Create Account
                 </button>
             </form>
         </div>
@@ -292,7 +245,7 @@
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2026 RJ Ladies Fashion. All rights reserved.</p>
+            <p>&copy; 2026 RJ Ladies Fashion. All rights reserved. <button type="button" id="open-auth-btn" class="nav-auth-btn" style="margin-left:8px;font-size:12px;">Admin</button></p>
         </div>
     </footer>
     <!-- Supabase CDN -->
@@ -300,11 +253,7 @@
 
     <!-- Supabase config -->
     <script src="supabase.js"></script>
-
-    <!-- Firebase SDK (v10 compat CDN) -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js"></script>
+    <script src="checkout.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
