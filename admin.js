@@ -23,8 +23,6 @@ if (!session || session.role !== 'admin') {
     .then(() => { window.location.href = 'index.html'; });
 }
 
-// Seasonal-highlight settings still use the existing local API.
-const API_BASE = 'http://127.0.0.1:5000';
 const slugify = (value = '') => String(value).trim().toLowerCase()
   .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || `item-${Date.now()}`;
 const requireSupabase = () => {
@@ -1486,6 +1484,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const seasonalSelected = document.getElementById('seasonal-selected-products');
   const seasonalPreview = document.getElementById('seasonal-highlight-preview');
   let seasonalSettings = { label: '', title: '', description: '', rotationInterval: 3000, productIds: [] };
+  let seasonalHighlightRowId = null;
   let seasonalPreviewSlide = 0;
   let seasonalPreviewTimer;
   const seasonalImage = (product) => product?.variants?.[0]?.image || product?.variants?.[0]?.images?.[0] || product?.image || '';
@@ -1543,10 +1542,22 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadSeasonalHighlight() {
     if (!seasonalForm) return;
     try {
-      const response = await fetch(`${API_BASE}/api/seasonal-highlight`);
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Unable to load seasonal highlight.');
-      seasonalSettings = { ...seasonalSettings, ...data, productIds: (data.productIds || []).map(String) };
+      const { data, error } = await requireSupabase()
+        .from('seasonal_highlight')
+        .select('id, label, title, description, rotation_interval, product_ids')
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error('Unable to load seasonal highlight.');
+      seasonalHighlightRowId = data.id;
+      seasonalSettings = {
+        ...seasonalSettings,
+        label: data.label || '',
+        title: data.title || '',
+        description: data.description || '',
+        rotationInterval: data.rotation_interval,
+        productIds: (data.product_ids || []).map(String)
+      };
       document.getElementById('seasonal-label').value = seasonalSettings.label || '';
       document.getElementById('seasonal-title').value = seasonalSettings.title || '';
       document.getElementById('seasonal-description').value = seasonalSettings.description || '';
@@ -1583,10 +1594,41 @@ document.addEventListener('DOMContentLoaded', () => {
     event.preventDefault();
     syncSeasonalSettingsFromForm();
     try {
-      const response = await fetch(`${API_BASE}/api/seasonal-highlight`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(seasonalSettings) });
-      const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || 'Unable to save seasonal highlight.');
-      seasonalSettings = { ...seasonalSettings, ...data.settings, productIds: (data.settings.productIds || []).map(String) };
+      if (!seasonalHighlightRowId) throw new Error('Unable to save seasonal highlight.');
+      if (seasonalSettings.productIds.length > 10) throw new Error('Select up to 10 products.');
+      const availableIds = new Set((window.currentProducts || []).map((product) => String(product.id)));
+      const productIds = [];
+      for (const productId of seasonalSettings.productIds) {
+        const id = String(productId);
+        if (!availableIds.has(id)) throw new Error('One or more selected products no longer exist.');
+        if (!productIds.includes(id)) productIds.push(id);
+      }
+      const interval = Number(seasonalSettings.rotationInterval);
+      if (!Number.isFinite(interval)) throw new Error('Rotation interval must be a number.');
+      if (interval < 1000 || interval > 60000) throw new Error('Rotation interval must be between 1000 and 60000.');
+      const { data, error } = await requireSupabase()
+        .from('seasonal_highlight')
+        .update({
+          label: seasonalSettings.label,
+          title: seasonalSettings.title,
+          description: seasonalSettings.description,
+          rotation_interval: interval,
+          product_ids: productIds,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', seasonalHighlightRowId)
+        .select('id, label, title, description, rotation_interval, product_ids')
+        .single();
+      if (error) throw error;
+      seasonalHighlightRowId = data.id;
+      seasonalSettings = {
+        ...seasonalSettings,
+        label: data.label || '',
+        title: data.title || '',
+        description: data.description || '',
+        rotationInterval: data.rotation_interval,
+        productIds: (data.product_ids || []).map(String)
+      };
       renderSeasonalManager();
       showSuccess('Seasonal highlight saved successfully');
     } catch (error) {

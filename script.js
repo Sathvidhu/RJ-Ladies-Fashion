@@ -1,4 +1,3 @@
-const API_BASE = 'http://127.0.0.1:5000';
 // RJ Ladies Fashion - Client Application Script
 document.addEventListener("DOMContentLoaded", function () {
     console.log("RJ Ladies Fashion Client script initialized.");
@@ -570,8 +569,23 @@ document.addEventListener("DOMContentLoaded", function () {
         };
         let settings = defaults;
         try {
-            const response = await fetch(`${API_BASE}/api/seasonal-highlight`);
-            if (response.ok) settings = { ...defaults, ...await response.json() };
+            if (!window.supabaseClient) throw new Error('Supabase client is not available.');
+            const { data, error } = await window.supabaseClient
+                .from('seasonal_highlight')
+                .select('label, title, description, rotation_interval, product_ids')
+                .limit(1)
+                .maybeSingle();
+            if (error) throw error;
+            if (data) {
+                settings = {
+                    ...defaults,
+                    label: data.label,
+                    title: data.title,
+                    description: data.description,
+                    rotationInterval: data.rotation_interval,
+                    productIds: data.product_ids || []
+                };
+            }
         } catch (error) {
             console.warn('Seasonal highlight settings unavailable; using catalog defaults.');
         }
